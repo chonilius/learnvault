@@ -5,12 +5,15 @@ import ConnectAccount from "./components/ConnectAccount"
 import { labPrefix } from "./contracts/util"
 import Debug from "./pages/Debug"
 import Home from "./pages/Home"
+import Profile from "./pages/Profile"
 
 function App() {
 	return (
 		<Routes>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<Home />} />
+				<Route path="/profile" element={<Profile />} />
+				<Route path="/profile/:walletAddress" element={<Profile />} />
 				<Route path="/debug" element={<Debug />} />
 				<Route path="/debug/:contractName" element={<Debug />} />
 			</Route>
@@ -31,6 +34,14 @@ const AppLayout: React.FC = () => (
 							<Button variant="tertiary" size="md" disabled={isActive}>
 								<Icon.Code02 size="md" />
 								Contract Explorer
+							</Button>
+						)}
+					</NavLink>
+					<NavLink to="/profile">
+						{({ isActive }) => (
+							<Button variant="tertiary" size="md" disabled={isActive}>
+								<Icon.UserCircle size="md" />
+								Profile
 							</Button>
 						)}
 					</NavLink>

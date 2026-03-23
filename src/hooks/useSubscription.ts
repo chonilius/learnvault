@@ -36,7 +36,6 @@ export function useSubscription(
 	pollInterval = 5000,
 ) {
 	const id = `${contractId}:${topic}`
-	paging[id] = paging[id] || {}
 
 	React.useEffect(() => {
 		const currentPaging = paging[id] ?? (paging[id] = {})
