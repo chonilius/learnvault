@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet } from "react-router-dom"
+import { Outlet, Route, Routes } from "react-router-dom"
 import styles from "./App.module.css"
 import Footer from "./components/Footer"
 import NavBar from "./components/NavBar"
@@ -8,6 +8,7 @@ import Home from "./pages/Home"
 import Leaderboard from "./pages/Leaderboard"
 import Learn from "./pages/Learn"
 import Profile from "./pages/Profile"
+import ScholarshipApply from "./pages/ScholarshipApply"
 
 function App() {
 	return (
@@ -18,6 +19,7 @@ function App() {
 				<Route path="/dao" element={<Dao />} />
 				<Route path="/leaderboard" element={<Leaderboard />} />
 				<Route path="/profile" element={<Profile />} />
+				<Route path="/scholarships/apply" element={<ScholarshipApply />} />
 				<Route path="/debug" element={<Debug />} />
 				<Route path="/debug/:contractName" element={<Debug />} />
 			</Route>
