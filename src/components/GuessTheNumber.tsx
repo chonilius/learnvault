@@ -1,5 +1,6 @@
 import { Button, Card, Code, Icon, Input } from "@stellar/design-system"
 import { useState } from "react"
+// import game from "../contracts/guess_the_number"
 import { useWallet } from "../hooks/useWallet"
 import styles from "./GuessTheNumber.module.css"
 
@@ -70,44 +71,28 @@ export const GuessTheNumber = () => {
 
 		setResult("loading")
 
-		try {
-			const game = await loadGuessClient()
-			if (!game) {
-				setErrorMessage(missingClientMessage)
-				setResult("failure")
-				return
-			}
+		// TODO: Create a transaction using the contract client
+		// const tx = await game.guess(
+		// 	{ a_number: BigInt(guess), guesser: address },
+		// 	// @ts-expect-error js-stellar-sdk has bad typings; publicKey is, in fact, allowed
+		// 	{ publicKey: address },
+		// )
 
-			const tx = await game.guess(
-				{ a_number: BigInt(guess), guesser: address },
-				{ publicKey: address },
-			)
-			const { result } = await tx.signAndSend({ signTransaction })
+		// // Send the transaction to the current network
+		// const { result } = await tx.signAndSend({ signTransaction })
 
-			if (result.isErr()) {
-				const error = result.unwrapErr()
-				console.error(error)
-				setErrorMessage(String(error))
-				setResult("failure")
-				return
-			}
+		// // Handle result and update wallet balance
+		// if (result.isErr()) {
+		// 	console.error(result.unwrapErr())
+		// } else {
+		// 	setResult(result.unwrap() ? "success" : "failure")
+		// 	await updateBalances()
+		// }
 
-			const isCorrectGuess = result.unwrap()
-			setResult(isCorrectGuess ? "success" : "failure")
-
-			if (!isCorrectGuess) {
-				setErrorMessage("Incorrect guess. Try again!")
-				return
-			}
-
-			await updateBalances()
-		} catch (error) {
-			console.error(error)
-			setErrorMessage(
-				error instanceof Error ? error.message : "Unable to submit your guess.",
-			)
-			setResult("failure")
-		}
+		// Placeholder: simulate success
+		setTimeout(() => {
+			setResult(Math.random() > 0.5 ? "success" : "failure")
+		}, 1000)
 	}
 
 	const reset = () => {

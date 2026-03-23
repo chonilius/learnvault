@@ -1,13 +1,13 @@
 import { Text } from "@stellar/design-system"
 
-export default function Profile() {
+export default function Learn() {
 	return (
 		<div>
 			<Text as="h1" size="lg">
-				My Profile
+				Learn
 			</Text>
 			<Text as="p" size="md">
-				This is the My Profile page.
+				This is the Learn page.
 			</Text>
 		</div>
 	)
