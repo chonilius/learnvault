@@ -157,3 +157,5 @@ export default function Dao() {
 		</div>
 	)
 }
+
+export default Dao

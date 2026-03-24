@@ -10,6 +10,9 @@ const GOV_KEY: Symbol = symbol_short!("GOV");
 const USDC_KEY: Symbol = symbol_short!("USDC");
 const TOTAL_KEY: Symbol = symbol_short!("TOTAL");
 const NEXT_PROPOSAL_KEY: Symbol = symbol_short!("NEXTPROP");
+const DISBURSED_KEY: Symbol = symbol_short!("DISBURSED");
+const SCHOLARS_KEY: Symbol = symbol_short!("SCHOLARS");
+const DONORS_KEY: Symbol = symbol_short!("DONORS");
 
 #[derive(Clone)]
 #[contracttype]
@@ -32,6 +35,7 @@ pub struct Proposal {
     pub milestone_titles: Vec<String>,
     pub milestone_dates: Vec<String>,
     pub submitted_at: u64,
+    Scholar(Address),
 }
 
 #[contracterror]
@@ -60,6 +64,9 @@ impl ScholarshipTreasury {
         env.storage().instance().set(&GOV_KEY, &governance_contract);
         env.storage().instance().set(&TOTAL_KEY, &0_i128);
         env.storage().instance().set(&NEXT_PROPOSAL_KEY, &1_u32);
+        env.storage().instance().set(&DISBURSED_KEY, &0_i128);
+        env.storage().instance().set(&SCHOLARS_KEY, &0_u32);
+        env.storage().instance().set(&DONORS_KEY, &0_u32);
     }
 
     pub fn deposit(env: Env, donor: Address, amount: i128) {
@@ -71,16 +78,27 @@ impl ScholarshipTreasury {
         let usdc = token::client(&env);
         usdc.transfer(&donor, &env.current_contract_address(), &amount);
 
-        let donor_key = DataKey::Donor(donor);
+        let donor_key = DataKey::Donor(donor.clone());
         let current = env
             .storage()
             .persistent()
             .get::<_, i128>(&donor_key)
             .unwrap_or(0);
+        
+        if current == 0 {
+            let donors_count = env.storage().instance().get::<_, u32>(&DONORS_KEY).unwrap_or(0);
+            env.storage().instance().set(&DONORS_KEY, &(donors_count + 1));
+        }
+        
         env.storage().persistent().set(&donor_key, &(current + amount));
 
         let total = env.storage().instance().get::<_, i128>(&TOTAL_KEY).unwrap_or(0);
         env.storage().instance().set(&TOTAL_KEY, &(total + amount));
+
+        env.events().publish(
+            (symbol_short!("deposit"), donor),
+            amount,
+        );
     }
 
     pub fn disburse(env: Env, recipient: Address, amount: i128) {
@@ -97,11 +115,39 @@ impl ScholarshipTreasury {
         }
 
         token::client(&env).transfer(&env.current_contract_address(), &recipient, &amount);
+        
         env.storage().instance().set(&TOTAL_KEY, &(total - amount));
+        
+        let disbursed = env.storage().instance().get::<_, i128>(&DISBURSED_KEY).unwrap_or(0);
+        env.storage().instance().set(&DISBURSED_KEY, &(disbursed + amount));
+
+        let scholar_key = DataKey::Scholar(recipient.clone());
+        if !env.storage().persistent().has(&scholar_key) {
+            let scholars_count = env.storage().instance().get::<_, u32>(&SCHOLARS_KEY).unwrap_or(0);
+            env.storage().instance().set(&SCHOLARS_KEY, &(scholars_count + 1));
+            env.storage().persistent().set(&scholar_key, &true);
+        }
+
+        env.events().publish(
+            (symbol_short!("disburse"), recipient),
+            amount,
+        );
     }
 
     pub fn get_balance(env: Env) -> i128 {
         env.storage().instance().get::<_, i128>(&TOTAL_KEY).unwrap_or(0)
+    }
+
+    pub fn get_total_disbursed(env: Env) -> i128 {
+        env.storage().instance().get::<_, i128>(&DISBURSED_KEY).unwrap_or(0)
+    }
+
+    pub fn get_scholars_count(env: Env) -> u32 {
+        env.storage().instance().get::<_, u32>(&SCHOLARS_KEY).unwrap_or(0)
+    }
+
+    pub fn get_donors_count(env: Env) -> u32 {
+        env.storage().instance().get::<_, u32>(&DONORS_KEY).unwrap_or(0)
     }
 
     pub fn get_donor_total(env: Env, donor: Address) -> i128 {
