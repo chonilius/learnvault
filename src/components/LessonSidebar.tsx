@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { Lesson } from "../data/lessons"
+import { type Lesson } from "../data/lessons"
 
 interface LessonSidebarProps {
 	courseId: string
@@ -46,7 +46,8 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
 					const isCompleted = completedMilestones.includes(l.id)
 					const isCurrent = l.id === currentLessonId
 					const previousCompleted =
-						index === 0 || completedMilestones.includes(lessons[index - 1].id)
+						index === 0 ||
+						completedMilestones.includes(lessons[index - 1]?.id ?? -1)
 					const isLocked = !isCompleted && !previousCompleted && !isCurrent
 
 					return (
@@ -87,8 +88,8 @@ const LessonSidebar: React.FC<LessonSidebarProps> = ({
 											isCompleted
 												? "bg-brand-emerald/20 border-brand-emerald text-brand-emerald"
 												: isCurrent
-												? "border-brand-cyan text-brand-cyan"
-												: "border-white/20 text-white/40"
+													? "border-brand-cyan text-brand-cyan"
+													: "border-white/20 text-white/40"
 										}`}
 									>
 										{isCompleted ? (
