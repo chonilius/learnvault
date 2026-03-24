@@ -1,0 +1,26 @@
+{
+	"version": 1,
+	"courses": [
+		{
+			"id": "stellar-basics",
+			"title": "Introduction to Stellar & Soroban",
+			"level": "beginner",
+			"published": true,
+			"path": "stellar-basics/course.json"
+		},
+		{
+			"id": "soroban-fundamentals",
+			"title": "Soroban Smart Contract Basics",
+			"level": "intermediate",
+			"published": true,
+			"path": "soroban-fundamentals/course.json"
+		},
+		{
+			"id": "defi-fundamentals",
+			"title": "DeFi Fundamentals",
+			"level": "beginner",
+			"published": true,
+			"path": "defi-fundamentals/course.json"
+		}
+	]
+}
