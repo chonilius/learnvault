@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { GuessTheNumber } from "../components/GuessTheNumber"
 import { MilestoneTracker } from "../components/MilestoneTracker"
+import OnboardingWizard from "../components/OnboardingWizard"
 
 const Home: React.FC = () => {
 	const { t } = useTranslation()
@@ -20,6 +21,8 @@ const Home: React.FC = () => {
 			<div className="absolute top-0 left-0 w-full h-full animate-mesh opacity-30 -z-20" />
 			<div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-brand-cyan/20 blur-[150px] rounded-full -z-10 animate-pulse" />
 			<div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-brand-purple/20 blur-[150px] rounded-full -z-10 animate-pulse delay-700" />
+
+			<OnboardingWizard />
 
 			<header className="text-center max-w-4xl mx-auto mb-24">
 				<div className="inline-block mb-10 animate-in fade-in zoom-in duration-1000">
@@ -39,7 +42,7 @@ const Home: React.FC = () => {
 						to="/courses"
 						className="iridescent-border px-12 py-5 rounded-2xl font-black text-lg uppercase tracking-widest hover:scale-105 active:scale-95 transition-all group relative overflow-hidden shadow-2xl shadow-brand-cyan/20"
 					>
-						<span className="relative z-10">{t("nav.courses")}</span>
+						<span className="relative z-10">Browse Tracks</span>
 					</Link>
 					<Link
 						to="/learn"

@@ -150,7 +150,7 @@ const DaoProposals: React.FC = () => {
 		)
 
 		if (!stillVisible) {
-			setSelectedProposal(filteredProposals[0])
+			setSelectedProposal(filteredProposals[0] ?? null)
 		}
 	}, [filteredProposals, selectedProposal])
 

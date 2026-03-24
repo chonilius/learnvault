@@ -18,7 +18,8 @@ type ContractRecord = Record<string, unknown>
  */
 const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
   try {
-    const mod = (await import("../contracts/learn_token")) as ContractRecord
+    const path = "../contracts/learn_token"
+    const mod = (await import(/* @vite-ignore */ path)) as ContractRecord
     return (mod.default as ContractRecord) ?? mod
   } catch {
     return null
