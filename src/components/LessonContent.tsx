@@ -1,8 +1,7 @@
 import React from "react"
 import ReactMarkdown from "react-markdown"
-import { Lesson } from "../data/lessons"
 import { Link } from "react-router-dom"
-import { ContentSkeleton } from "./SkeletonLoader"
+import { type Lesson } from "../data/lessons"
 
 // A simple mock skeleton to match what's needed for content loading state
 export const LessonContentSkeleton = () => (
@@ -99,15 +98,15 @@ const LessonContent: React.FC<LessonContentProps> = ({
 						isCompleted
 							? "bg-brand-emerald/20 text-brand-emerald border border-brand-emerald cursor-default"
 							: isCompleting
-							? "bg-brand-cyan/50 text-white cursor-wait animate-pulse"
-							: "bg-gradient-to-r from-brand-cyan to-brand-blue text-white hover:scale-105 active:scale-95"
+								? "bg-brand-cyan/50 text-white cursor-wait animate-pulse"
+								: "bg-gradient-to-r from-brand-cyan to-brand-blue text-white hover:scale-105 active:scale-95"
 					}`}
 				>
 					{isCompleting
 						? "Confirming..."
 						: isCompleted
-						? "Lesson Completed ✓"
-						: "Mark as Complete"}
+							? "Lesson Completed ✓"
+							: "Mark as Complete"}
 				</button>
 			</div>
 		</section>

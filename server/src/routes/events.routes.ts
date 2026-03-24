@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router } from "express"
 
-import { getEvents } from "../controllers/events.controller";
+import { getEvents } from "../controllers/events.controller"
 
-export const eventsRouter = Router();
+export const eventsRouter = Router()
 
 /**
  * @openapi
@@ -43,4 +43,4 @@ export const eventsRouter = Router();
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-eventsRouter.get("/events", getEvents);
+eventsRouter.get("/events", getEvents)

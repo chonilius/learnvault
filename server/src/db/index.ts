@@ -6,13 +6,13 @@ export const db: DbClient = {
 	connected: false,
 }
 
-export const pool = activePool;
+export const pool = activePool
 
 export const initDb = async () => {
-    try {
-        if (activePool instanceof Pool) {
-            const client = await activePool.connect();
-            await client.query(`
+	try {
+		if (activePool instanceof Pool) {
+			const client = await activePool.connect()
+			await client.query(`
                 CREATE TABLE IF NOT EXISTS comments (
                     id SERIAL PRIMARY KEY,
                     proposal_id TEXT NOT NULL,
@@ -81,19 +81,19 @@ export const initDb = async () => {
                     original_filename TEXT NOT NULL,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
-            `);
-            client.release();
-            console.log("Postgres database initialized");
-        } else {
-            console.log("In-memory mock database initialized");
-        }
-    } catch (err) {
-        console.error("Database initialization failed, falling back to mock");
-        activePool = new MockPool();
-    }
-};
+            `)
+			client.release()
+			console.log("Postgres database initialized")
+		} else {
+			console.log("In-memory mock database initialized")
+		}
+	} catch (err) {
+		console.error("Database initialization failed, falling back to mock")
+		activePool = new MockPool()
+	}
+}
 
 export const db = {
-  query: (text: string, params?: any[]) => activePool.query(text, params),
-  connected: true
-};
+	query: (text: string, params?: any[]) => activePool.query(text, params),
+	connected: true,
+}

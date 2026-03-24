@@ -1,10 +1,10 @@
 declare global {
-  namespace Express {
-    interface Request {
-      /** Stellar public key (G...) after JWT verification */
-      walletAddress?: string;
-    }
-  }
+	namespace Express {
+		interface Request {
+			/** Stellar public key (G...) after JWT verification */
+			walletAddress?: string
+		}
+	}
 }
 
-export {};
+export {}

@@ -319,17 +319,20 @@ transfers to token holders.
 
 ## Whitepaper Generation
 
-The LearnVault Technical Whitepaper is authored in Markdown and exported to PDF. To ensure Mermaid diagrams render correctly in the PDF export, follow this two-step build process:
+The LearnVault Technical Whitepaper is authored in Markdown and exported to PDF.
+To ensure Mermaid diagrams render correctly in the PDF export, follow this
+two-step build process:
 
-1. **Compile Diagrams to Images:**
-   Generate static PNGs from the Mermaid source files using the Mermaid CLI:
-```bash
+1. **Compile Diagrams to Images:** Generate static PNGs from the Mermaid source
+   files using the Mermaid CLI:
+
+   ```bash
    npx @mermaid-js/mermaid-cli -i docs/architecture.mmd -o docs/architecture.png
 ```
 
-2. **Generate the PDF:**
-   Once the diagrams are compiled and embedded as standard markdown image links, generate the final PDF using `md-to-pdf`:
-```bash
+2. **Generate the PDF:** Once the diagrams are compiled and embedded as standard
+   markdown image links, generate the final PDF using `md-to-pdf`:
+   ```bash
    npx md-to-pdf docs/whitepaper.md
 ```
 
@@ -389,14 +392,7 @@ LearnVault, please reach out through our official channels.
 ---
 
 _LearnVault — Built for African learners. Powered by community. Governed by
-effort._
-
-## Architecture Decisions
-
-- [ADR-001.md](docs/adr/ADR-001.md)
-- [ADR-002.md](docs/adr/ADR-002.md)
-- [ADR-003.md](docs/adr/ADR-003.md)
-- [ADR-004.md](docs/adr/ADR-004.md)
-- [ADR-005.md](docs/adr/ADR-005.md)
-- [ADR-006.md](docs/adr/ADR-006.md)
-- [ADR-007.md](docs/adr/ADR-007.md)
+effort._ \n## Architecture Decisions\n\n- [ADR-001.md](docs/adr/ADR-001.md)\n-
+[ADR-002.md](docs/adr/ADR-002.md)\n- [ADR-003.md](docs/adr/ADR-003.md)\n-
+[ADR-004.md](docs/adr/ADR-004.md)\n- [ADR-005.md](docs/adr/ADR-005.md)\n-
+[ADR-006.md](docs/adr/ADR-006.md)\n- [ADR-007.md](docs/adr/ADR-007.md)\n
