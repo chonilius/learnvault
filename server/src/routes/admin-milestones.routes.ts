@@ -1,15 +1,10 @@
-import { Router } from "express";
-import { requireAdmin } from "../middleware/admin.middleware";
-import { milestoneSubmitRateLimiter } from "../middleware/milestone-rate-limit.middleware";
-import {
-  getPendingMilestones,
-  getMilestoneById,
-  approveMilestone,
-  rejectMilestone,
-} from "../controllers/admin-milestones.controller";
-import { submitMilestoneReport } from "../controllers/milestone-submit.controller";
+import { Router } from "express"
+import * as controllers from "../controllers/admin-milestones.controller"
+import { submitMilestoneReport } from "../controllers/milestone-submit.controller"
+import { requireAdmin } from "../middleware/admin.middleware"
+import { milestoneSubmitRateLimiter } from "../middleware/milestone-rate-limit.middleware"
 
-export const adminMilestonesRouter = Router();
+const router = Router()
 
 /**
  * @openapi
@@ -27,11 +22,11 @@ export const adminMilestonesRouter = Router();
  *       403:
  *         $ref: '#/components/responses/ForbiddenError'
  */
-adminMilestonesRouter.get(
-  "/admin/milestones/pending",
-  requireAdmin,
-  getPendingMilestones
-);
+router.get(
+	"/admin/milestones/pending",
+	requireAdmin,
+	controllers.getPendingMilestones,
+)
 
 /**
  * @openapi
@@ -56,11 +51,7 @@ adminMilestonesRouter.get(
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-adminMilestonesRouter.get(
-  "/admin/milestones/:id",
-  requireAdmin,
-  getMilestoneById
-);
+router.get("/admin/milestones/:id", requireAdmin, controllers.getMilestoneById)
 
 /**
  * @openapi
@@ -87,11 +78,11 @@ adminMilestonesRouter.get(
  *       409:
  *         description: Report already processed
  */
-adminMilestonesRouter.post(
-  "/admin/milestones/:id/approve",
-  requireAdmin,
-  approveMilestone
-);
+router.post(
+	"/admin/milestones/:id/approve",
+	requireAdmin,
+	controllers.approveMilestone,
+)
 
 /**
  * @openapi
@@ -130,11 +121,11 @@ adminMilestonesRouter.post(
  *       409:
  *         description: Report already processed
  */
-adminMilestonesRouter.post(
-  "/admin/milestones/:id/reject",
-  requireAdmin,
-  rejectMilestone
-);
+router.post(
+	"/admin/milestones/:id/reject",
+	requireAdmin,
+	controllers.rejectMilestone,
+)
 
 /**
  * @openapi
@@ -150,15 +141,15 @@ adminMilestonesRouter.post(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [scholarAddress, courseId, milestoneId]
+ *             required: [scholarAddress, course_id, milestone_id]
  *             properties:
  *               scholarAddress:
  *                 type: string
- *               courseId:
+ *               course_id:
  *                 type: string
- *               milestoneId:
+ *               milestone_id:
  *                 type: integer
- *               evidenceGithub:
+ *               evidenceGitHub:
  *                 type: string
  *               evidenceIpfsCid:
  *                 type: string
@@ -174,8 +165,10 @@ adminMilestonesRouter.post(
  *       429:
  *         description: Rate limit exceeded
  */
-adminMilestonesRouter.post(
-  "/milestones/submit",
-  milestoneSubmitRateLimiter,
-  submitMilestoneReport
-);
+router.post(
+	"/milestones/submit",
+	milestoneSubmitRateLimiter,
+	submitMilestoneReport,
+)
+
+export { router as adminMilestonesRouter }
