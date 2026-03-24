@@ -16,6 +16,7 @@ import Courses from "./pages/Courses"
 import Credential from "./pages/Credential"
 import Dao from "./pages/Dao"
 import DaoProposals from "./pages/DaoProposals"
+import DaoPropose from "./pages/DaoPropose"
 >>>>>>> main
 import Debug from "./pages/Debug"
 import Donor from "./pages/Donor"
@@ -80,6 +81,7 @@ function App() {
 				<Route path="/learn" element={<ErrorBoundary><Learn /></ErrorBoundary>} />
 				<Route path="/dao" element={<ErrorBoundary><Dao /></ErrorBoundary>} />
 				<Route path="/dao/proposals" element={<ErrorBoundary><DaoProposals /></ErrorBoundary>} />
+				<Route path="/dao/propose" element={<ErrorBoundary><DaoPropose /></ErrorBoundary>} />
 				<Route path="/leaderboard" element={<ErrorBoundary><Leaderboard /></ErrorBoundary>} />
 				<Route path="/profile" element={<ErrorBoundary><Profile /></ErrorBoundary>} />
 				<Route path="/scholarships/apply" element={<ErrorBoundary><ScholarshipApply /></ErrorBoundary>} />
