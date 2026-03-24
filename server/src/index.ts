@@ -26,6 +26,9 @@ const pemString = z
 import { validatorRouter } from "./routes/validator.routes";
 import { commentsRouter } from "./routes/comments.routes";
 import { initDb } from "./db/index";
+import { buildOpenApiSpec } from "./openapi";
+import { coursesRouter } from "./routes/courses.routes";
+import { eventsRouter } from "./routes/events.routes";
 
 
 const envSchema = z.object({
@@ -83,7 +86,6 @@ app.use("/api", coursesRouter);
 app.use("/api", validatorRouter);
 app.use("/api", eventsRouter);
 app.use("/api", commentsRouter);
-
 
 app.get("/api/docs", (_req, res) => {
   res.type("application/yaml").send(openApiYaml);
