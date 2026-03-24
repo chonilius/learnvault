@@ -7,16 +7,19 @@
  * Added: ProfileSkeleton and NoCredentialsEmptyState
  */
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useContext } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import {
 	ProfileSkeleton,
 	NoCredentialsEmptyState,
 } from "../components/SkeletonLoader"
+import { ActivityFeed } from "../components/ActivityFeed"
+import { WalletContext } from "../providers/WalletProvider"
 
 const Profile: React.FC = () => {
 	const { t } = useTranslation()
+	const { address: walletAddress } = useContext(WalletContext)
 	const [isLoading, setIsLoading] = useState(true)
 
 	// Issue #44 — Simulate async data fetch for skeleton demo
@@ -135,6 +138,8 @@ const Profile: React.FC = () => {
 					</div>
 				)}
 			</section>
+
+			<ActivityFeed address={walletAddress} limit={10} />
 		</div>
 	)
 }

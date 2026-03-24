@@ -1,62 +1,89 @@
-import React from "react";
-import { courses } from "../data/courses";
+import React from "react"
+import { Link } from "react-router-dom"
+import { courses } from "../data/courses"
+
+const levelStyles: Record<(typeof courses)[number]["level"], string> = {
+	Beginner: "bg-brand-emerald/20 text-brand-emerald border-brand-emerald/20",
+	Intermediate: "bg-brand-purple/20 text-brand-purple border-brand-purple/20",
+	Advanced: "bg-red-500/20 text-red-400 border-red-500/20",
+}
 
 const Courses: React.FC = () => {
-    return (
-        <div className="container mx-auto px-4 py-12">
-            <header className="mb-12 text-center">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gradient">
-                    Course Catalog
-                </h1>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                    Explore our expert-led learning tracks and master the future of Web3, DeFi, and Smart Contracts.
-                </p>
-            </header>
+	return (
+		<div className="container mx-auto px-4 py-12">
+			<header className="mb-12 text-center">
+				<p className="text-sm uppercase tracking-[0.35em] text-brand-cyan/80 mb-4">
+					Learning Tracks
+				</p>
+				<h1 className="text-4xl md:text-5xl font-bold mb-4 text-gradient">
+					Choose a path and start with a focused first lesson.
+				</h1>
+				<p className="text-gray-400 text-lg max-w-3xl mx-auto leading-relaxed">
+					Every LearnVault track is designed to move new learners from setup
+					to hands-on progress with a clear first milestone.
+				</p>
+			</header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {courses.map((course, index) => (
-                    <div
-                        key={index}
-                        className="glass-card p-6 rounded-2xl flex flex-col h-full border border-white/10 hover:border-white/20 transition-all duration-300 group"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-brand-blue/20 text-brand-cyan border border-brand-cyan/20">
-                                {course.track}
-                            </span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${course.level === "Beginner"
-                                    ? "bg-brand-emerald/20 text-brand-emerald border-brand-emerald/20"
-                                    : course.level === "Intermediate"
-                                        ? "bg-brand-purple/20 text-brand-purple border-brand-purple/20"
-                                        : "bg-red-500/20 text-red-400 border-red-500/20"
-                                } border`}>
-                                {course.level}
-                            </span>
-                        </div>
+			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+				{courses.map((course) => (
+					<article
+						key={course.id}
+						className="glass-card rounded-[2rem] flex flex-col h-full border border-white/10 overflow-hidden group"
+					>
+						<div
+							className={`h-36 bg-linear-to-br ${course.accentClassName} border-b border-white/10`}
+						/>
+						<div className="p-6 flex flex-col h-full">
+							<div className="flex items-center justify-between mb-4 gap-3">
+								<span className="px-3 py-1 rounded-full text-xs font-semibold bg-brand-blue/20 text-brand-cyan border border-brand-cyan/20">
+									{course.track}
+								</span>
+								<span
+									className={`px-3 py-1 rounded-full text-xs font-semibold border ${levelStyles[course.level]}`}
+								>
+									{course.level}
+								</span>
+							</div>
 
-                        <h3 className="text-xl font-bold mb-2 group-hover:text-brand-cyan transition-colors duration-300">
-                            {course.title}
-                        </h3>
+							<h2 className="text-xl font-bold mb-3 group-hover:text-brand-cyan transition-colors duration-300">
+								{course.title}
+							</h2>
+							<p className="text-white/55 text-sm leading-relaxed mb-5">
+								{course.description}
+							</p>
 
-                        <div className="flex items-center text-gray-400 text-sm mb-6">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {course.duration}
-                        </div>
+							<div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 mb-5">
+								<p className="text-xs uppercase tracking-[0.25em] text-white/40">
+									First lesson
+								</p>
+								<p className="mt-2 text-sm font-medium text-white/75">
+									{course.firstLesson}
+								</p>
+							</div>
 
-                        <div className="mt-auto">
-                            <button
-                                disabled
-                                className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-gray-500 font-semibold cursor-not-allowed hover:bg-white/10 transition-colors duration-300"
-                            >
-                                Coming Soon
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
+							<ul className="space-y-2 text-sm text-white/60 mb-6">
+								{course.outcomes.map((outcome) => (
+									<li key={outcome} className="rounded-xl bg-white/[0.03] px-3 py-2">
+										{outcome}
+									</li>
+								))}
+							</ul>
 
-export default Courses;
+							<div className="mt-auto flex items-center justify-between gap-4 text-sm text-gray-400">
+								<span>{course.duration}</span>
+								<Link
+									to={`/learn?course=${course.id}`}
+									className="iridescent-border px-4 py-2 rounded-xl font-semibold text-white hover:scale-105 transition-transform"
+								>
+									Preview track
+								</Link>
+							</div>
+						</div>
+					</article>
+				))}
+			</div>
+		</div>
+	)
+}
+
+export default Courses

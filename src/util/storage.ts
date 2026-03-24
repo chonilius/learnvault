@@ -4,6 +4,8 @@ type Schema = {
 	walletNetwork: string
 	networkPassphrase: string
 	"learnvault:theme": "light" | "dark"
+	"learnvault:onboarding-complete": boolean
+	"learnvault:onboarding-track": string
 }
 
 class TypedStorage<T> {
