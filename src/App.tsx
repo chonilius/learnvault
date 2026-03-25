@@ -25,6 +25,7 @@ import Learn from "./pages/Learn"
 import LessonView from "./pages/LessonView"
 import NotFound from "./pages/NotFound"
 import Profile from "./pages/Profile"
+import ScholarMilestones from "./pages/ScholarMilestones"
 import ScholarshipApply from "./pages/ScholarshipApply"
 import Treasury from "./pages/Treasury"
 
@@ -47,6 +48,7 @@ function App() {
 					<Route path="/leaderboard" element={<Leaderboard />} />
 					<Route path="/profile" element={<Profile />} />
 					<Route path="/profile/:walletAddress" element={<Profile />} />
+					<Route path="/scholar/milestones" element={<ScholarMilestones />} />
 					<Route path="/scholarships/apply" element={<ScholarshipApply />} />
 					<Route path="/admin" element={<Admin />} />
 					<Route path="/treasury" element={<Treasury />} />
