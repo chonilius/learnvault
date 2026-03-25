@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { CourseFilter } from "../components/CourseFilter"
+=======
+import React, { useEffect } from "react"
+import { Link, useSearchParams } from "react-router-dom"
+import Pagination from "../components/Pagination"
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 import { courses } from "../data/courses"
 
 const levelStyles: Record<(typeof courses)[number]["level"], string> = {
@@ -9,6 +15,7 @@ const levelStyles: Record<(typeof courses)[number]["level"], string> = {
 	Advanced: "bg-red-500/20 text-red-400 border-red-500/20",
 }
 
+<<<<<<< HEAD
 /** Converts a track label to a URL-safe slug, e.g. "Smart Contracts" → "smart-contracts" */
 function trackSlug(track: string): string {
 	return track.toLowerCase().replace(/\s+/g, "-")
@@ -91,6 +98,32 @@ const Courses: React.FC = () => {
 			return matchesSearch && matchesDifficulty && matchesTrack
 		})
 	}, [searchInput, difficulty, track])
+=======
+const ITEMS_PER_PAGE = 2 // ← Change to 2 or 3 for testing
+
+const Courses: React.FC = () => {
+	const [searchParams, setSearchParams] = useSearchParams()
+	const parsedPage = Number.parseInt(searchParams.get("page") || "1", 10)
+	const currentPage =
+		Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
+
+	const totalPages = Math.max(1, Math.ceil(courses.length / ITEMS_PER_PAGE))
+	const safePage = Math.min(currentPage, totalPages)
+
+	const startIndex = (safePage - 1) * ITEMS_PER_PAGE
+	const currentCourses = courses.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+	useEffect(() => {
+		if (currentPage !== safePage) {
+			setSearchParams({ page: safePage.toString() })
+		}
+	}, [currentPage, safePage, setSearchParams])
+
+	const handlePageChange = (newPage: number) => {
+		setSearchParams({ page: newPage.toString() })
+		window.scrollTo({ top: 0, behavior: "smooth" })
+	}
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 
 	return (
 		<div className="container mx-auto px-4 py-12">
@@ -107,6 +140,7 @@ const Courses: React.FC = () => {
 				</p>
 			</header>
 
+<<<<<<< HEAD
 			<CourseFilter
 				search={searchInput}
 				onSearchChange={setSearchInput}
@@ -132,6 +166,13 @@ const Courses: React.FC = () => {
 						type="button"
 						onClick={handleClear}
 						className="px-6 py-2.5 rounded-full text-sm font-bold uppercase tracking-widest border border-brand-cyan/30 text-brand-cyan hover:bg-brand-cyan/10 transition-all"
+=======
+			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+				{currentCourses.map((course) => (
+					<article
+						key={course.id}
+						className="glass-card rounded-[2rem] flex flex-col h-full border border-white/10 overflow-hidden group"
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 					>
 						Clear all filters
 					</button>
@@ -195,10 +236,22 @@ const Courses: React.FC = () => {
 									</Link>
 								</div>
 							</div>
+<<<<<<< HEAD
 						</article>
 					))}
 				</div>
 			)}
+=======
+						</div>
+					</article>
+				))}
+			</div>
+			<Pagination
+				page={safePage}
+				totalPages={totalPages}
+				onPageChange={handlePageChange}
+			/>
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 		</div>
 	)
 }

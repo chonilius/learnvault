@@ -16,7 +16,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import Pagination from "../components/Pagination"
 import { LeaderboardRowSkeleton } from "../components/SkeletonLoader"
 import { useWallet } from "../hooks/useWallet"
 import {
@@ -135,12 +136,14 @@ const Leaderboard: React.FC = () => {
 	const { t } = useTranslation()
 	const navigate = useNavigate()
 	const { address: connectedAddress } = useWallet()
-
+	const [searchParams, setSearchParams] = useSearchParams()
+	const parsedPage = Number.parseInt(searchParams.get("page") || "1", 10)
+	const currentPage =
+		Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
 	const [isLoading, setIsLoading] = useState(true)
 	const [timeFilter, setTimeFilter] = useState<TimeFilter>("all")
 	const [searchQuery, setSearchQuery] = useState("")
 	const [debouncedSearch, setDebouncedSearch] = useState("")
-	const [page, setPage] = useState(1)
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	// Issue #44 — Simulate async data fetch for skeleton demo
@@ -154,17 +157,17 @@ const Leaderboard: React.FC = () => {
 		if (debounceRef.current) clearTimeout(debounceRef.current)
 		debounceRef.current = setTimeout(() => {
 			setDebouncedSearch(searchQuery)
-			setPage(1)
+			setSearchParams({ page: "1" })
 		}, 300)
 		return () => {
 			if (debounceRef.current) clearTimeout(debounceRef.current)
 		}
-	}, [searchQuery])
+	}, [searchQuery, setSearchParams])
 
 	// Reset page when filter changes
 	useEffect(() => {
-		setPage(1)
-	}, [timeFilter])
+		setSearchParams({ page: "1" })
+	}, [timeFilter, setSearchParams])
 
 	const allEntries = useMemo(
 		() => generateLeaderboard(connectedAddress ?? undefined),
@@ -182,7 +185,17 @@ const Leaderboard: React.FC = () => {
 	}, [allEntries, timeFilter, debouncedSearch])
 
 	const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-	const pageEntries = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+	const safePage = Math.min(currentPage, totalPages)
+	const pageEntries = filtered.slice(
+		(safePage - 1) * PAGE_SIZE,
+		safePage * PAGE_SIZE,
+	)
+
+	useEffect(() => {
+		if (currentPage !== safePage) {
+			setSearchParams({ page: safePage.toString() })
+		}
+	}, [currentPage, safePage, setSearchParams])
 
 	const myEntry = connectedAddress
 		? (allEntries.find((e) => e.address === connectedAddress) as
@@ -195,6 +208,11 @@ const Leaderboard: React.FC = () => {
 		{ key: "month", label: t("pages.leaderboard.filterMonth") },
 		{ key: "week", label: t("pages.leaderboard.filterWeek") },
 	]
+
+	const handlePageChange = (newPage: number) => {
+		setSearchParams({ page: newPage.toString() })
+		window.scrollTo({ top: 0, behavior: "smooth" })
+	}
 
 	return (
 		<div className="p-6 md:p-12 max-w-6xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -331,29 +349,11 @@ const Leaderboard: React.FC = () => {
 
 			{/* Pagination */}
 			{!isLoading && filtered.length > 0 && (
-				<div className="flex items-center justify-between mt-6">
-					<span className="text-xs text-white/30 font-medium">
-						{t("pages.leaderboard.page", { current: page, total: totalPages })}
-					</span>
-					<div className="flex gap-3">
-						<button
-							onClick={() => setPage((p) => Math.max(1, p - 1))}
-							disabled={page === 1}
-							className="px-5 py-2 glass rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest
-								text-white/50 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-						>
-							{t("pages.leaderboard.prev")}
-						</button>
-						<button
-							onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-							disabled={page === totalPages}
-							className="px-5 py-2 glass rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest
-								text-white/50 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-						>
-							{t("pages.leaderboard.next")}
-						</button>
-					</div>
-				</div>
+				<Pagination
+					page={safePage}
+					totalPages={totalPages}
+					onPageChange={handlePageChange}
+				/>
 			)}
 		</div>
 	)

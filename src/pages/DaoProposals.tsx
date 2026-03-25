@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { Helmet } from "react-helmet"
+<<<<<<< HEAD
 import { useToast } from "../components/Toast/ToastProvider"
+=======
+import { useSearchParams } from "react-router-dom"
+import Pagination from "../components/Pagination"
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 
 type ProposalStatus = "Active" | "Passed" | "Rejected"
 type VoteType = "YES" | "NO" | null
@@ -130,7 +135,13 @@ const getTimeRemaining = (endDate: string) => {
 	return `${days}d ${hours}h ${minutes}m`
 }
 
+const ITEMS_PER_PAGE = 2
+
 const DaoProposals: React.FC = () => {
+	const [searchParams, setSearchParams] = useSearchParams()
+	const parsedPage = Number.parseInt(searchParams.get("page") || "1", 10)
+	const currentPage =
+		Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
 	const [filter, setFilter] = useState<FilterType>("Active")
 	const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
 		null,
@@ -142,6 +153,25 @@ const DaoProposals: React.FC = () => {
 		if (filter === "All") return MOCK_PROPOSALS
 		return MOCK_PROPOSALS.filter((proposal) => proposal.status === filter)
 	}, [filter])
+
+	const totalPages = Math.max(
+		1,
+		Math.ceil(filteredProposals.length / ITEMS_PER_PAGE),
+	)
+
+	const safePage = Math.min(currentPage, totalPages)
+
+	const startIndex = (safePage - 1) * ITEMS_PER_PAGE
+	const currentProposals = filteredProposals.slice(
+		startIndex,
+		startIndex + ITEMS_PER_PAGE,
+	)
+
+	useEffect(() => {
+		if (currentPage !== safePage) {
+			setSearchParams({ page: safePage.toString() })
+		}
+	}, [currentPage, safePage, setSearchParams])
 
 	useEffect(() => {
 		if (filteredProposals.length === 0) {
@@ -210,6 +240,11 @@ const DaoProposals: React.FC = () => {
 		}
 	}
 
+	const handlePageChange = (newPage: number) => {
+		setSearchParams({ page: newPage.toString() })
+		window.scrollTo({ top: 0, behavior: "smooth" })
+	}
+
 	const voteDisabledMessage = getVoteDisabledMessage()
 
 	const siteUrl = "https://learnvault.app"
@@ -254,7 +289,16 @@ const DaoProposals: React.FC = () => {
 						<button
 							type="button"
 							key={item}
+<<<<<<< HEAD
 							onClick={() => setFilter(item)}
+=======
+							onClick={() => {
+								setFilter(item)
+								// FIX: Explicit reset on filter change (prevents stale page from old filter).
+								setSearchParams({ page: "1" })
+								setTxMessage("")
+							}}
+>>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
 							aria-pressed={filter === item}
 							className={`px-5 py-2.5 rounded-full border text-xs font-black uppercase tracking-widest transition-all ${
 								filter === item
@@ -430,9 +474,9 @@ const DaoProposals: React.FC = () => {
 				</section>
 			)}
 
-			{filteredProposals.length > 0 ? (
+			{currentProposals.length > 0 ? (
 				<div className="grid gap-6">
-					{filteredProposals.map((proposal) => {
+					{currentProposals.map((proposal) => {
 						const approvalPercent = Math.round(
 							(proposal.votesFor /
 								(proposal.votesFor + proposal.votesAgainst)) *
@@ -531,6 +575,11 @@ const DaoProposals: React.FC = () => {
 					</p>
 				</div>
 			)}
+			<Pagination
+				page={safePage}
+				totalPages={totalPages}
+				onPageChange={handlePageChange}
+			/>
 		</div>
 	)
 }
