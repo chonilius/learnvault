@@ -34,7 +34,10 @@ export class ScholarshipTreasury implements ScholarshipTreasuryContract {
 		this.contractId = contractId
 	}
 
-	async createProposal(params: CreateProposalParams, _address?: string): Promise<string> {
+	async createProposal(
+		params: CreateProposalParams,
+		_address?: string,
+	): Promise<string> {
 		try {
 			const mockTxHash = `PROPOSAL_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
 

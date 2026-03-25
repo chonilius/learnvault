@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-	getReputationRankFromLrn,
-	lrnBalanceToNumber,
-} from "./reputationRank"
+import { getReputationRankFromLrn, lrnBalanceToNumber } from "./reputationRank"
 
 describe("lrnBalanceToNumber", () => {
 	it("returns 0 for 0n", () => {

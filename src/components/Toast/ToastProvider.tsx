@@ -1,8 +1,7 @@
 import { createContext, use, useCallback, type ReactNode } from "react"
 import { toast, Toaster } from "sonner"
 
-const STELLAR_EXPLORER_TX =
-	"https://stellar.expert/explorer/testnet/tx"
+const STELLAR_EXPLORER_TX = "https://stellar.expert/explorer/testnet/tx"
 
 interface ToastContextType {
 	showSuccess: (message: string, txHash?: string) => void

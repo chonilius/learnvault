@@ -72,7 +72,12 @@ const DaoPropose: React.FC = () => {
 		}
 
 		void checkBalance()
-	}, [address, isConnected, getGovernanceTokenBalance, getMinimumProposalTokens])
+	}, [
+		address,
+		isConnected,
+		getGovernanceTokenBalance,
+		getMinimumProposalTokens,
+	])
 
 	const handleInputChange = (
 		e: React.ChangeEvent<
@@ -292,21 +297,68 @@ const DaoPropose: React.FC = () => {
 					</h1>
 				)}
 				<div className="text-white/80">
-					<ReactMarkdown 
+					<ReactMarkdown
 						components={{
-							h1: ({children}) => <h1 className="text-2xl font-bold text-white mb-4">{children}</h1>,
-							h2: ({children}) => <h2 className="text-xl font-bold text-white mb-3">{children}</h2>,
-							h3: ({children}) => <h3 className="text-lg font-bold text-white mb-2">{children}</h3>,
-							p: ({children}) => <p className="text-white/80 leading-relaxed mb-4">{children}</p>,
-							ul: ({children}) => <ul className="list-disc list-inside text-white/80 mb-4">{children}</ul>,
-							ol: ({children}) => <ol className="list-decimal list-inside text-white/80 mb-4">{children}</ol>,
-							li: ({children}) => <li className="text-white/80 mb-2">{children}</li>,
-							strong: ({children}) => <strong className="text-white font-bold">{children}</strong>,
-							em: ({children}) => <em className="text-white italic">{children}</em>,
-							code: ({children}) => <code className="bg-white/10 text-brand-cyan px-2 py-1 rounded text-sm">{children}</code>,
-							pre: ({children}) => <pre className="bg-white/10 text-white p-4 rounded-lg overflow-x-auto mb-4">{children}</pre>,
-							blockquote: ({children}) => <blockquote className="border-l-4 border-brand-cyan pl-4 text-white/60 italic mb-4">{children}</blockquote>,
-							a: ({children, href}) => <a href={href} className="text-brand-cyan hover:text-brand-cyan/80 underline">{children}</a>,
+							h1: ({ children }) => (
+								<h1 className="text-2xl font-bold text-white mb-4">
+									{children}
+								</h1>
+							),
+							h2: ({ children }) => (
+								<h2 className="text-xl font-bold text-white mb-3">
+									{children}
+								</h2>
+							),
+							h3: ({ children }) => (
+								<h3 className="text-lg font-bold text-white mb-2">
+									{children}
+								</h3>
+							),
+							p: ({ children }) => (
+								<p className="text-white/80 leading-relaxed mb-4">{children}</p>
+							),
+							ul: ({ children }) => (
+								<ul className="list-disc list-inside text-white/80 mb-4">
+									{children}
+								</ul>
+							),
+							ol: ({ children }) => (
+								<ol className="list-decimal list-inside text-white/80 mb-4">
+									{children}
+								</ol>
+							),
+							li: ({ children }) => (
+								<li className="text-white/80 mb-2">{children}</li>
+							),
+							strong: ({ children }) => (
+								<strong className="text-white font-bold">{children}</strong>
+							),
+							em: ({ children }) => (
+								<em className="text-white italic">{children}</em>
+							),
+							code: ({ children }) => (
+								<code className="bg-white/10 text-brand-cyan px-2 py-1 rounded text-sm">
+									{children}
+								</code>
+							),
+							pre: ({ children }) => (
+								<pre className="bg-white/10 text-white p-4 rounded-lg overflow-x-auto mb-4">
+									{children}
+								</pre>
+							),
+							blockquote: ({ children }) => (
+								<blockquote className="border-l-4 border-brand-cyan pl-4 text-white/60 italic mb-4">
+									{children}
+								</blockquote>
+							),
+							a: ({ children, href }) => (
+								<a
+									href={href}
+									className="text-brand-cyan hover:text-brand-cyan/80 underline"
+								>
+									{children}
+								</a>
+							),
 						}}
 					>
 						{formData.description || "*Start typing to see a preview...*"}

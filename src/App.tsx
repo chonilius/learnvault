@@ -31,33 +31,33 @@ import Treasury from "./pages/Treasury"
 function App() {
 	return (
 		<ToastProvider>
-		<WalletToastWatcher />
-		<Routes>
-			<Route element={<AppLayout />}>
-				<Route path="/" element={<Home />} />
-				<Route path="/courses" element={<Courses />} />
-				<Route
-					path="/courses/:courseId/lessons/:lessonId"
-					element={<LessonView />}
-				/>
-				<Route path="/learn" element={<Learn />} />
-				<Route path="/dao" element={<Dao />} />
-				<Route path="/dao/proposals" element={<DaoProposals />} />
-				<Route path="/dao/propose" element={<DaoPropose />} />
-				<Route path="/leaderboard" element={<Leaderboard />} />
-				<Route path="/profile" element={<Profile />} />
-				<Route path="/profile/:walletAddress" element={<Profile />} />
-				<Route path="/scholarships/apply" element={<ScholarshipApply />} />
-				<Route path="/admin" element={<Admin />} />
-				<Route path="/treasury" element={<Treasury />} />
-				<Route path="/donor" element={<Donor />} />
-				<Route path="/credentials/:nftId" element={<Credential />} />
-				<Route path="/dashboard" element={<Dashboard />} />
-				<Route path="/debug" element={<Debug />} />
-				<Route path="/debug/:contractName" element={<Debug />} />
-				<Route path="*" element={<NotFound />} />
-			</Route>
-		</Routes>
+			<WalletToastWatcher />
+			<Routes>
+				<Route element={<AppLayout />}>
+					<Route path="/" element={<Home />} />
+					<Route path="/courses" element={<Courses />} />
+					<Route
+						path="/courses/:courseId/lessons/:lessonId"
+						element={<LessonView />}
+					/>
+					<Route path="/learn" element={<Learn />} />
+					<Route path="/dao" element={<Dao />} />
+					<Route path="/dao/proposals" element={<DaoProposals />} />
+					<Route path="/dao/propose" element={<DaoPropose />} />
+					<Route path="/leaderboard" element={<Leaderboard />} />
+					<Route path="/profile" element={<Profile />} />
+					<Route path="/profile/:walletAddress" element={<Profile />} />
+					<Route path="/scholarships/apply" element={<ScholarshipApply />} />
+					<Route path="/admin" element={<Admin />} />
+					<Route path="/treasury" element={<Treasury />} />
+					<Route path="/donor" element={<Donor />} />
+					<Route path="/credentials/:nftId" element={<Credential />} />
+					<Route path="/dashboard" element={<Dashboard />} />
+					<Route path="/debug" element={<Debug />} />
+					<Route path="/debug/:contractName" element={<Debug />} />
+					<Route path="*" element={<NotFound />} />
+				</Route>
+			</Routes>
 		</ToastProvider>
 	)
 }
