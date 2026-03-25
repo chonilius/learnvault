@@ -16,16 +16,17 @@ const GetTestUSDCButton: React.FC<GetTestUSDCButtonProps> = ({
 	const { t } = useTranslation()
 	const [isPending, startTransition] = useTransition()
 	const [isTooltipVisible, setIsTooltipVisible] = useState(false)
-	const { address } = useWallet()
+	const { address, signTransaction } = useWallet()
 
 	if (!address) return null
 
 	const handleGetUSDC = () => {
 		startTransition(async () => {
 			try {
-				await mintTestUSDC(address, amount)
+				const txHash = await mintTestUSDC(address, signTransaction, amount)
 				showSuccess(
-					t("usdc.mintSuccess", { amount, address: address.slice(0, 8) }),
+					t("usdc.mintSuccess", { amount, address: address.slice(0, 8) }) + 
+					` (Hash: ${txHash.slice(0, 8)}...)`,
 				)
 			} catch (error) {
 				const errorMessage =
