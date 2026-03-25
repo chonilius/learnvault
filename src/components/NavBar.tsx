@@ -1,6 +1,7 @@
 import { useId, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
+import { ReputationBadge } from "./ReputationBadge"
 import { WalletButton } from "./WalletButton"
 
 export default function NavBar() {
@@ -56,7 +57,12 @@ export default function NavBar() {
 					))}
 				</nav>
 
-				<div className="flex items-center gap-4">
+				<div className="flex items-center gap-3 md:gap-4">
+					<ReputationBadge
+						className="hidden sm:inline-flex shrink-0"
+						size="sm"
+						showBalance
+					/>
 					<div className="hidden sm:block scale-90">
 						<WalletButton />
 					</div>
