@@ -1,3 +1,4 @@
+import { Card } from "@stellar/design-system"
 import { type ReactNode } from "react"
 import { useWallet } from "../hooks/useWallet"
 import ConnectAccount from "./ConnectAccount"

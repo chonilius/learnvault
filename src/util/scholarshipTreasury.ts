@@ -1,3 +1,4 @@
+import { rpcUrl, networkPassphrase } from "../contracts/util"
 import { useWallet } from "../hooks/useWallet"
 
 export interface ScholarshipTreasuryContract {
@@ -27,22 +28,18 @@ export interface CreateProposalParams {
 }
 
 export class ScholarshipTreasury implements ScholarshipTreasuryContract {
-	constructor(private readonly contractId: string) {}
+	private contractId: string
 
-	async createProposal(
-		params: CreateProposalParams,
-		address?: string,
-	): Promise<string> {
-		if (!address) {
-			throw new Error("Wallet not connected")
-		}
+	constructor(contractId: string) {
+		this.contractId = contractId
+	}
 
+	async createProposal(params: CreateProposalParams): Promise<string> {
 		try {
 			const mockTxHash = `PROPOSAL_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
 
 			console.log("Creating proposal with params:", params)
 			console.log("Contract ID:", this.contractId)
-			console.log("Submitting from address:", address)
 
 			await new Promise((resolve) => setTimeout(resolve, 1500))
 
