@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { Helmet } from "react-helmet"
+import { useToast } from "../components/Toast/ToastProvider"
 
 type ProposalStatus = "Active" | "Passed" | "Rejected"
 type VoteType = "YES" | "NO" | null
@@ -110,7 +111,6 @@ const governanceTokens = 128.45
 const isTokenHolder = true
 const filterGroupLabelId = "dao-proposals-filter-label"
 const voteHelpId = "dao-proposals-vote-help"
-const voteStatusId = "dao-proposals-vote-status"
 
 const shortenAddress = (address: string) => {
 	if (address.includes("...")) return address
@@ -136,7 +136,7 @@ const DaoProposals: React.FC = () => {
 		null,
 	)
 	const [isSubmittingVote, setIsSubmittingVote] = useState(false)
-	const [txMessage, setTxMessage] = useState("")
+	const { showSuccess, showError } = useToast()
 
 	const filteredProposals = useMemo(() => {
 		if (filter === "All") return MOCK_PROPOSALS
@@ -199,13 +199,12 @@ const DaoProposals: React.FC = () => {
 		if (!selectedProposal || voteDisabled) return
 
 		setIsSubmittingVote(true)
-		setTxMessage("Transaction submitted...")
 
 		try {
 			await new Promise((resolve) => setTimeout(resolve, 1500))
-			setTxMessage(`Transaction confirmed. Vote ${vote} recorded successfully.`)
+			showSuccess(`Vote ${vote} recorded successfully!`)
 		} catch {
-			setTxMessage("Transaction failed. Please try again.")
+			showError("Transaction failed. Please try again.")
 		} finally {
 			setIsSubmittingVote(false)
 		}
@@ -255,10 +254,7 @@ const DaoProposals: React.FC = () => {
 						<button
 							type="button"
 							key={item}
-							onClick={() => {
-								setFilter(item)
-								setTxMessage("")
-							}}
+							onClick={() => setFilter(item)}
 							aria-pressed={filter === item}
 							className={`px-5 py-2.5 rounded-full border text-xs font-black uppercase tracking-widest transition-all ${
 								filter === item
@@ -424,17 +420,6 @@ const DaoProposals: React.FC = () => {
 								</button>
 							</div>
 
-							{txMessage && (
-								<p
-									id={voteStatusId}
-									className="mt-4 text-sm text-white/85"
-									role="status"
-									aria-live="polite"
-								>
-									{txMessage}
-								</p>
-							)}
-
 							{voteDisabledMessage && (
 								<p id={voteHelpId} className="mt-4 text-sm text-white/70">
 									{voteDisabledMessage}
@@ -458,10 +443,7 @@ const DaoProposals: React.FC = () => {
 							<button
 								type="button"
 								key={proposal.id}
-								onClick={() => {
-									setSelectedProposal(proposal)
-									setTxMessage("")
-								}}
+								onClick={() => setSelectedProposal(proposal)}
 								aria-pressed={selectedProposal?.id === proposal.id}
 								aria-label={`Select ${proposal.title}, ${proposal.status} proposal`}
 								className={`glass-card p-8 rounded-[2.5rem] border text-left transition-all duration-300 ${

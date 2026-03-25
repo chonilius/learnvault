@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
+import { useToast } from "../components/Toast/ToastProvider"
 import { useWallet } from "./useWallet"
 
 export interface Proposal {
@@ -29,6 +30,7 @@ const GOVERNANCE_TOKEN_CONTRACT = readEnv("PUBLIC_GOVERNANCE_TOKEN_CONTRACT")
 export function useGovernance() {
 	const { address, signTransaction } = useWallet()
 	const queryClient = useQueryClient()
+	const { showSuccess, showError } = useToast()
 
 	// Helper to load contract clients
 	const loadClient = useCallback(async (path: string) => {
@@ -188,6 +190,13 @@ export function useGovernance() {
 				["governance", "voted", proposalId, address],
 				true,
 			)
+			showSuccess("Vote submitted successfully!")
+		},
+
+		onError: (error: unknown) => {
+			const message =
+				error instanceof Error ? error.message : "Vote transaction failed"
+			showError(message)
 		},
 	})
 

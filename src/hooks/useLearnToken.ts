@@ -1,8 +1,8 @@
 import { type Api } from "@stellar/stellar-sdk/rpc"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
+import { useToast } from "../components/Toast/ToastProvider"
 import { useContractIds } from "./useContractIds"
-import { useNotification } from "./useNotification"
 import { useSubscription } from "./useSubscription"
 import { useWallet } from "./useWallet"
 
@@ -108,7 +108,7 @@ export interface UseLearnTokenResult {
 export function useLearnToken(address?: string): UseLearnTokenResult {
 	const { address: walletAddress, signTransaction } = useWallet()
 	const { learnToken: contractId, isDeployed } = useContractIds()
-	const { addNotification } = useNotification()
+	const { showSuccess, showError } = useToast()
 	const queryClient = useQueryClient()
 
 	const targetAddress = address ?? walletAddress
@@ -211,12 +211,12 @@ export function useLearnToken(address?: string): UseLearnTokenResult {
 		onSuccess: () => {
 			// Eagerly invalidate so callers see the updated balance immediately.
 			void queryClient.invalidateQueries({ queryKey: BALANCE_QUERY_KEY_PREFIX })
-			addNotification("LearnTokens minted successfully", "success")
+			showSuccess("LearnTokens minted successfully")
 		},
 
 		onError: (error: unknown) => {
 			const message = error instanceof Error ? error.message : "Mint failed"
-			addNotification(message, "error")
+			showError(message)
 		},
 	})
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useToast } from "../components/Toast/ToastProvider"
 import { rpcUrl } from "../contracts/util"
 import { useWallet } from "./useWallet"
 
@@ -162,6 +163,7 @@ const generateMockDonorData = (_address: string): DonorData => {
 
 export const useDonor = (): DonorData => {
 	const { address } = useWallet()
+	const { showError } = useToast()
 	const [data, setData] = useState<DonorData>({
 		stats: {
 			totalContributed: 0,
@@ -248,6 +250,7 @@ export const useDonor = (): DonorData => {
 					error: "Failed to load donor data",
 					isLoading: false,
 				}))
+				showError("Failed to load donor data")
 			}
 		}
 
