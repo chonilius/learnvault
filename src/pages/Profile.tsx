@@ -7,7 +7,10 @@ import {
 	NoCredentialsEmptyState,
 	ProfileSkeleton,
 } from "../components/SkeletonLoader"
+import { ActivityFeed } from "../components/ActivityFeed"
+import { ReputationBadge } from "../components/ReputationBadge"
 import { WalletContext } from "../providers/WalletProvider"
+import { shortenAddress } from "../util/scholarshipApplications"
 
 const Profile: React.FC = () => {
 	const { t } = useTranslation()
@@ -20,9 +23,6 @@ const Profile: React.FC = () => {
 	}, [])
 
 	const user = {
-		name: "Alex Rivera",
-		address: "GA7B...4Y2K",
-		lrnBalance: "250 LRN",
 		nfts: [
 			{
 				id: "1",
@@ -77,6 +77,19 @@ const Profile: React.FC = () => {
 					<h1 className="text-4xl font-black mb-3 tracking-tighter">
 						{t("pages.profile.title")}
 					</h1>
+					<code className="text-white/30 text-sm block mb-6 font-mono tracking-widest">
+						{walletAddress
+							? shortenAddress(walletAddress)
+							: t("wallet.connect")}
+					</code>
+					<div className="flex flex-wrap justify-center md:justify-start gap-4">
+						{walletAddress ? (
+							<ReputationBadge size="md" showBalance />
+						) : (
+							<div className="px-5 py-2 glass rounded-full border border-white/10 text-xs font-black uppercase tracking-widest text-white/40">
+								{t("wallet.connect")}
+							</div>
+						)}
 					<p className="text-lg font-bold mb-2">{user.name}</p>
 					<code className="text-white/70 text-sm block mb-6 font-mono tracking-widest">
 						{user.address}
