@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useToast } from "../components/Toast/ToastProvider"
 import { rpcUrl } from "../contracts/util"
+import { ErrorCode, createAppError } from "../types/errors"
+import { parseError, isUserRejection } from "../utils/errors"
 import { useNotification } from "./useNotification"
 import { useWallet } from "./useWallet"
 
@@ -77,7 +80,15 @@ const loadCourseClient = async (): Promise<AnyRecord | null> => {
 		const path = "../contracts/course_milestone"
 		const mod = (await import(/* @vite-ignore */ path)) as AnyRecord
 		return (mod.default as AnyRecord) ?? mod
-	} catch {
+	} catch (err) {
+		console.warn(
+			createAppError(
+				ErrorCode.CONTRACT_NOT_DEPLOYED,
+				"CourseMilestone contract not available",
+				{ contractName: "course_milestone" },
+				err,
+			),
+		)
 		return null
 	}
 }
@@ -92,11 +103,16 @@ const callFirst = async (
 		if (!fn) continue
 		try {
 			return await Promise.resolve(fn(...args))
-		} catch {
+		} catch (err) {
+			console.debug(`Method ${name} failed, trying next method:`, err)
 			continue
 		}
 	}
-	throw new Error(`No compatible method found: ${methodNames.join(", ")}`)
+	throw createAppError(
+		ErrorCode.CONTRACT_NOT_DEPLOYED,
+		"No compatible method found",
+		{ methodName: methodNames.join(", ") },
+	)
 }
 
 const waitForMintEvent = async (
@@ -145,8 +161,8 @@ const waitForMintEvent = async (
 					return lastEarned
 				}
 			}
-		} catch {
-			// ignore polling errors; continue until timeout
+		} catch (err) {
+			console.debug("Polling for mint event failed, continuing:", err)
 		}
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
@@ -154,8 +170,9 @@ const waitForMintEvent = async (
 }
 
 export function useCourse() {
-	const { address, signTransaction } = useWallet()
+	const { address, signTransaction, updateBalances } = useWallet()
 	const { addNotification } = useNotification()
+	const { showWarning, showError, showInfo } = useToast()
 
 	const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
 	const [progressMap, setProgressMap] = useState<
@@ -233,13 +250,15 @@ export function useCourse() {
 					]),
 				),
 			)
-		} catch {
-			addNotification(
-				"Unable to load enrolled courses from CourseMilestone",
-				"warning",
-			)
+		} catch (err) {
+			const appError = parseError(err)
+			if (appError.code === ErrorCode.CONTRACT_NOT_DEPLOYED) {
+				showWarning("CourseMilestone contract not available on this network")
+			} else {
+				showError("Unable to load enrolled courses. Please try again.")
+			}
 		}
-	}, [address, addNotification])
+	}, [address, addNotification, showWarning, showError])
 
 	useEffect(() => {
 		void refreshCourses()
@@ -286,11 +305,22 @@ export function useCourse() {
 				)
 				addNotification("Enrollment successful", "success")
 				await refreshCourses()
-			} catch {
-				addNotification("Enrollment failed", "error")
+			} catch (err) {
+				if (isUserRejection(err)) {
+					showInfo("Enrollment cancelled")
+				} else {
+					showError("Enrollment failed. Please try again.")
+				}
 			}
 		},
-		[address, addNotification, refreshCourses, signTransaction],
+		[
+			address,
+			addNotification,
+			refreshCourses,
+			signTransaction,
+			showError,
+			showInfo,
+		],
 	)
 
 	const completeMilestone = useCallback(
@@ -331,6 +361,7 @@ export function useCourse() {
 						"Milestone completed (local fallback mode)",
 						"success",
 					)
+					await updateBalances()
 					return
 				}
 
@@ -365,9 +396,14 @@ export function useCourse() {
 						: "Milestone complete. LRN mint event confirmed",
 					"success",
 				)
+				await updateBalances()
 				await refreshCourses()
-			} catch {
-				addNotification("Failed to complete milestone", "error")
+			} catch (err) {
+				if (isUserRejection(err)) {
+					showInfo("Milestone completion cancelled")
+				} else {
+					showError("Failed to complete milestone. Please try again.")
+				}
 			} finally {
 				setIsCompletingMilestone(false)
 			}
@@ -378,6 +414,9 @@ export function useCourse() {
 			getCourseProgress,
 			refreshCourses,
 			signTransaction,
+			updateBalances,
+			showError,
+			showInfo,
 		],
 	)
 

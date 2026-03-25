@@ -1,155 +1,183 @@
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import CommentSection from "../components/CommentSection";
+import { Button, Card, Input, Text } from "@stellar/design-system"
+import { useMemo, useState } from "react"
 
-interface Proposal {
-  id: string;
-  title: string;
-  description: string;
-  author: string;
-  status: "Active" | "Passed" | "Rejected";
-  votesFor: number;
-  votesAgainst: number;
-  endDate: string;
+import { useWallet } from "../hooks/useWallet"
+
+export default function Dao() {
+	const { address } = useWallet()
+
+	type Proposal = {
+		id: string
+		title: string
+		amountUsdc: string
+		createdAtIso: string
+		votesYes: number
+	}
+
+	const proposalsKey = useMemo(
+		() => (address ? `dao:proposals:${address}` : "dao:proposals:anon"),
+		[address],
+	)
+	const governanceKey = useMemo(
+		() => (address ? `dao:gov:${address}` : "dao:gov:anon"),
+		[address],
+	)
+
+	const [title, setTitle] = useState("Scholarship for Stellar Basics")
+	const [amountUsdc, setAmountUsdc] = useState("100")
+	const [isGovHolder, setIsGovHolder] = useState(() => {
+		return localStorage.getItem(governanceKey) === "1"
+	})
+	const [govTokens, setGovTokens] = useState(() => {
+		const raw = localStorage.getItem(`${governanceKey}:tokens`)
+		return raw ? Number(raw) || 0 : 0
+	})
+
+	const [proposals, setProposals] = useState<Proposal[]>(() => {
+		try {
+			const raw = localStorage.getItem(proposalsKey)
+			return raw ? (JSON.parse(raw) as Proposal[]) : []
+		} catch {
+			return []
+		}
+	})
+
+	const persistProposals = (next: Proposal[]) => {
+		setProposals(next)
+		localStorage.setItem(proposalsKey, JSON.stringify(next))
+	}
+
+	const submitProposal = () => {
+		if (!address) return
+		const id = String(Date.now())
+		const next: Proposal[] = [
+			{
+				id,
+				title,
+				amountUsdc,
+				createdAtIso: new Date().toISOString(),
+				votesYes: 0,
+			},
+			...proposals,
+		]
+		persistProposals(next)
+	}
+
+	const voteYes = (id: string) => {
+		if (!isGovHolder) return
+		const next = proposals.map((p) =>
+			p.id === id ? { ...p, votesYes: p.votesYes + 1 } : p,
+		)
+		persistProposals(next)
+	}
+
+	const depositUsdc = () => {
+		if (!address) return
+		const next = govTokens + 10
+		setGovTokens(next)
+		localStorage.setItem(`${governanceKey}:tokens`, String(next))
+		setIsGovHolder(true)
+		localStorage.setItem(governanceKey, "1")
+	}
+
+	return (
+		<div>
+			<Text as="h1" size="lg">
+				DAO
+			</Text>
+
+			<Card>
+				<Text as="h2" size="md">
+					Submit scholarship proposal
+				</Text>
+				{!address ? (
+					<Text as="p" size="sm">
+						Connect wallet to submit.
+					</Text>
+				) : (
+					<div style={{ display: "grid", gap: "0.75rem", maxWidth: 520 }}>
+						<Input
+							id="proposal-title"
+							label="Title"
+							fieldSize="md"
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
+						/>
+						<Input
+							id="proposal-amount"
+							label="Amount (USDC)"
+							fieldSize="md"
+							value={amountUsdc}
+							onChange={(e) => setAmountUsdc(e.target.value)}
+						/>
+						<Button
+							variant="primary"
+							size="md"
+							data-testid="submit-proposal"
+							onClick={submitProposal}
+						>
+							Submit Proposal
+						</Button>
+					</div>
+				)}
+			</Card>
+
+			<Card>
+				<Text as="h2" size="md">
+					Treasury (Donor)
+				</Text>
+				<Text as="p" size="sm">
+					Deposit USDC → receive governance tokens.
+				</Text>
+				<Button
+					variant="secondary"
+					size="md"
+					data-testid="deposit-usdc"
+					disabled={!address}
+					onClick={depositUsdc}
+				>
+					Deposit USDC
+				</Button>
+				<Text as="div" size="sm" data-testid="gov-token-balance">
+					Governance Tokens: {govTokens}
+				</Text>
+			</Card>
+
+			<Card>
+				<Text as="h2" size="md">
+					Active proposals
+				</Text>
+				{proposals.length === 0 ? (
+					<Text as="p" size="sm">
+						No proposals yet.
+					</Text>
+				) : (
+					<div style={{ display: "grid", gap: "0.75rem" }}>
+						{proposals.map((p) => (
+							<Card key={p.id}>
+								<Text as="div" size="sm" data-testid="proposal-title">
+									{p.title}
+								</Text>
+								<Text as="div" size="sm">
+									Requested: {p.amountUsdc} USDC
+								</Text>
+								<Text as="div" size="sm" data-testid="vote-count">
+									Votes YES: {p.votesYes}
+								</Text>
+								<Button
+									variant="primary"
+									size="sm"
+									data-testid="vote-yes"
+									disabled={!isGovHolder}
+									onClick={() => voteYes(p.id)}
+								>
+									Vote YES
+								</Button>
+							</Card>
+						))}
+					</div>
+				)}
+			</Card>
+		</div>
+	)
 }
-
-const MOCK_PROPOSALS: Proposal[] = [
-  {
-    id: "1",
-    title: "Incentivize Soroban Developers with LRN",
-    description: "This proposal aims to allocate 1,000,000 LRN from the treasury to reward developers who contribute to core Soroban libraries and documentation. \n\n## Goals\n- Increase ecosystem activity\n- Improve developer onboarding\n- Reward high-quality technical content",
-    author: "GA7B...4Y2K",
-    status: "Active",
-    votesFor: 450000,
-    votesAgainst: 12000,
-    endDate: "2024-04-15"
-  },
-  {
-    id: "2",
-    title: "Upgrade Protocol to v22",
-    description: "Proposed upgrade to Soroban Protocol 22 to enable advanced storage optimizations and improved contract performance. \n\n### Impact\n- Lower gas fees\n- Faster execution\n- New SDK features",
-    author: "GBSU...9R3T",
-    status: "Active",
-    votesFor: 890000,
-    votesAgainst: 500,
-    endDate: "2024-04-20"
-  }
-];
-
-const Dao: React.FC = () => {
-  const { t } = useTranslation();
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
-
-  if (selectedProposal) {
-    return (
-      <div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <button 
-          onClick={() => setSelectedProposal(null)}
-          className="mb-12 flex items-center gap-2 text-white/40 hover:text-brand-cyan transition-colors font-black uppercase tracking-widest text-xs"
-        >
-          ← Back to Proposals
-        </button>
-
-        <header className="mb-16">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h1 className="text-5xl font-black mb-4 tracking-tighter text-gradient leading-tight">
-                {selectedProposal.title}
-              </h1>
-              <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest">
-                <span className="text-brand-cyan">By {selectedProposal.author}</span>
-                <span className="w-1.5 h-1.5 bg-white/10 rounded-full" />
-                <span className="text-white/40">Ends {selectedProposal.endDate}</span>
-              </div>
-            </div>
-            <div className="px-6 py-2 bg-brand-cyan/10 border border-brand-cyan/30 rounded-full">
-              <span className="text-brand-cyan text-xs font-black uppercase tracking-widest">
-                {selectedProposal.status}
-              </span>
-            </div>
-          </div>
-
-          <div className="glass-card p-12 rounded-[3.5rem] border border-white/5 mb-16">
-            <div className="prose prose-invert prose-lg max-w-none text-white/60 leading-relaxed font-medium">
-              {selectedProposal.description.split('\n').map((para, i) => (
-                <p key={i} className="mb-4">{para}</p>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 mb-20">
-            <div className="glass-card p-10 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-brand-emerald/40" />
-              <p className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-2">For</p>
-              <h3 className="text-3xl font-black">{selectedProposal.votesFor.toLocaleString()} LRN</h3>
-            </div>
-            <div className="glass-card p-10 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-brand-purple/40" />
-              <p className="text-[10px] text-white/30 uppercase font-black tracking-widest mb-2">Against</p>
-              <h3 className="text-3xl font-black text-white/60">{selectedProposal.votesAgainst.toLocaleString()} LRN</h3>
-            </div>
-          </div>
-        </header>
-
-        <CommentSection 
-          proposalId={selectedProposal.id} 
-          proposalAuthor={selectedProposal.author}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <header className="mb-20 text-center">
-        <h1 className="text-7xl font-black mb-6 tracking-tighter text-gradient">
-          {t("pages.dao.title", "Governance")}
-        </h1>
-        <p className="text-white/40 text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          {t("pages.dao.desc", "Shape the future of LearnVault. Vote on protocol upgrades, treasury allocations, and ecosystem incentives.")}
-        </p>
-      </header>
-
-      <div className="grid gap-8">
-        {MOCK_PROPOSALS.map((proposal) => (
-          <div 
-            key={proposal.id}
-            onClick={() => setSelectedProposal(proposal)}
-            className="glass-card p-12 rounded-[3.5rem] border border-white/5 hover:border-brand-cyan/30 hover:-translate-y-2 transition-all duration-500 cursor-pointer group"
-          >
-            <div className="flex justify-between items-start mb-8">
-              <h2 className="text-3xl font-black group-hover:text-brand-cyan transition-colors tracking-tight">
-                {proposal.title}
-              </h2>
-              <span className="px-4 py-1.5 bg-white/5 text-[10px] font-black uppercase tracking-widest rounded-full border border-white/10">
-                {proposal.status}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-brand-cyan shadow-[0_0_15px_rgba(0,255,240,0.5)]" 
-                  style={{ width: `${(proposal.votesFor / (proposal.votesFor + proposal.votesAgainst)) * 100}%` }}
-                />
-              </div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40">
-                {Math.round((proposal.votesFor / (proposal.votesFor + proposal.votesAgainst)) * 100)}% Passing
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="mt-20 glass-card p-12 rounded-[3.5rem] border border-white/5 text-center bg-brand-purple/5 border-brand-purple/20">
-        <h3 className="text-xl font-black mb-4">Voting Power</h3>
-        <p className="text-white/40 text-sm mb-6">You have 250 LRN tokens available for voting.</p>
-        <button className="px-10 py-4 bg-brand-purple text-white font-black uppercase tracking-widest rounded-full shadow-2xl shadow-brand-purple/40 hover:scale-105 transition-all">
-          Delegate Power
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default Dao;

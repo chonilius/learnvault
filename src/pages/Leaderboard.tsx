@@ -41,9 +41,10 @@ const Leaderboard: React.FC = () => {
 	}
 
 	return (
-		<div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
-			<header className="mb-16 text-center">
-				<h1 className="text-6xl font-black mb-4 tracking-tighter text-gradient">
+		<div className="p-6 md:p-12 max-w-6xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
+			{/* Header */}
+			<header className="mb-12 text-center">
+				<h1 className="text-5xl md:text-6xl font-black mb-4 tracking-tighter text-gradient">
 					{t("pages.leaderboard.title")}
 				</h1>
 				<p className="text-white/40 text-lg font-medium">

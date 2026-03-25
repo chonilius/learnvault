@@ -38,6 +38,7 @@ export interface WalletContextType {
 	address?: string
 	balances: MappedBalances
 	isPending: boolean
+	isReconnecting: boolean
 	network?: string
 	networkPassphrase?: string
 	signTransaction: typeof wallet.signTransaction
@@ -48,6 +49,7 @@ const POLL_INTERVAL = 1000
 
 export const WalletContext = createContext<WalletContextType>({
 	isPending: true,
+	isReconnecting: true,
 	balances: {},
 	updateBalances: async () => {},
 	signTransaction,
@@ -58,6 +60,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 	const [address, setAddress] = useState<string>()
 	const [network, setNetwork] = useState<string>()
 	const [networkPassphrase, setNetworkPassphrase] = useState<string>()
+	const [isReconnecting, setIsReconnecting] = useState(true)
 	const [isPending, startTransition] = useTransition()
 	const popupLock = useRef(false)
 
@@ -70,6 +73,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		storage.setItem("walletAddress", "")
 		storage.setItem("walletNetwork", "")
 		storage.setItem("networkPassphrase", "")
+		storage.setItem("walletType", "")
 	}
 
 	const updateBalances = useCallback(async () => {
@@ -140,7 +144,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 				// If `getNetwork` or `getAddress` throw errors... sign the user out???
 				nullify()
 				// then log the error (instead of throwing) so we have visibility
-				// into the error while working on Scaffold Stellar but we do not
+				// into the error while working on LearnVault but we do not
 				// crash the app process
 				console.error(e)
 			} finally {
@@ -167,6 +171,10 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 		// Get the wallet address when the component is mounted for the first time
 		startTransition(async () => {
 			await updateCurrentWalletState()
+			// Mark reconnection as complete after initial state is loaded
+			if (isMounted) {
+				setIsReconnecting(false)
+			}
 			// Start polling after initial state is loaded
 
 			if (isMounted) {
@@ -189,9 +197,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 			balances,
 			updateBalances,
 			isPending,
+			isReconnecting,
 			signTransaction,
 		}),
-		[address, network, networkPassphrase, balances, updateBalances, isPending],
+		[
+			address,
+			network,
+			networkPassphrase,
+			balances,
+			updateBalances,
+			isPending,
+			isReconnecting,
+		],
 	)
 
 	return <WalletContext value={contextValue}>{children}</WalletContext>

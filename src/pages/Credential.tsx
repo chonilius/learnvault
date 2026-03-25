@@ -1,11 +1,11 @@
 import React, { useState } from "react"
+import { Helmet } from "react-helmet"
 import { useParams } from "react-router-dom"
 
 const Credential: React.FC = () => {
 	const { nftId } = useParams<{ nftId: string }>()
 	const [copySuccess, setCopySuccess] = useState(false)
 
-	// Mock NFT data for the viewer
 	const nft = {
 		id: nftId || "1",
 		programName: "Soroban Smart Contract Masterclass",
@@ -17,6 +17,10 @@ const Credential: React.FC = () => {
 		reputationPoints: "50 LRN",
 	}
 
+	const siteUrl = "https://learnvault.app"
+	const title = `${nft.scholarName} earned "${nft.programName}" — LearnVault`
+	const description = `${nft.scholarName} completed "${nft.programName}" on ${nft.completionDate} and earned a verified ScholarNFT credential on LearnVault.`
+
 	const copyToClipboard = () => {
 		void navigator.clipboard.writeText(window.location.href).catch(() => {})
 		setCopySuccess(true)
@@ -25,17 +29,26 @@ const Credential: React.FC = () => {
 
 	return (
 		<div className="py-20 px-6 min-h-screen flex flex-col items-center gap-16 text-white relative overflow-hidden">
+			<Helmet>
+				<title>{title}</title>
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:image" content={nft.artworkUrl} />
+				<meta property="og:url" content={`${siteUrl}/credentials/${nft.id}`} />
+				<meta name="twitter:card" content="summary_large_image" />
+			</Helmet>
+
 			{/* Background Glows */}
+
 			<div className="absolute top-1/4 left-1/4 w-[50%] h-[50%] bg-brand-cyan/10 blur-[150px] rounded-full -z-10" />
 			<div className="absolute bottom-1/4 right-1/4 w-[50%] h-[50%] bg-brand-purple/10 blur-[150px] rounded-full -z-10" />
 
-			<div className="iridescent-border p-[1px] rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-1000">
+			<div className="iridescent-border p-px rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-1000">
 				<div className="glass-card w-full max-w-5xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10">
-					{/* Artwork Section */}
 					<div className="md:w-5/12 relative aspect-square md:aspect-auto group">
 						<img
 							src={nft.artworkUrl}
-							alt="ScholarNFT Badge"
+							alt={`Credential artwork for ${nft.programName} awarded to ${nft.scholarName}`}
 							className="w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-1000"
 						/>
 						<div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
@@ -43,7 +56,7 @@ const Credential: React.FC = () => {
 							Verified Scholar
 						</div>
 						<div className="absolute bottom-8 left-8">
-							<p className="text-[10px] font-black uppercase tracking-[3px] text-white/40 mb-1">
+							<p className="text-[10px] font-black uppercase tracking-[3px] text-white/70 mb-1">
 								Authenticity Hash
 							</p>
 							<code className="text-[10px] text-brand-emerald font-mono bg-black/50 px-2 py-1 rounded">
@@ -52,7 +65,6 @@ const Credential: React.FC = () => {
 						</div>
 					</div>
 
-					{/* Content Section */}
 					<div className="md:w-7/12 p-16 flex flex-col justify-center">
 						<div className="mb-10">
 							<div className="flex items-center gap-3 mb-4">
@@ -64,7 +76,7 @@ const Credential: React.FC = () => {
 							<h1 className="text-5xl font-black mb-6 leading-tight tracking-tighter">
 								{nft.programName}
 							</h1>
-							<p className="text-white/40 text-lg font-medium leading-relaxed">
+							<p className="text-white/70 text-lg font-medium leading-relaxed">
 								This on-chain certificate verifies that{" "}
 								<span className="text-white font-bold">{nft.scholarName}</span>{" "}
 								has successfully mastered the complexities of Soroban smart
@@ -74,23 +86,23 @@ const Credential: React.FC = () => {
 
 						<div className="grid grid-cols-2 gap-10 mb-12">
 							<div>
-								<label className="block text-[10px] uppercase font-black text-white/30 tracking-[3px] mb-2">
+								<p className="block text-[10px] uppercase font-black text-white/70 tracking-[3px] mb-2">
 									Awarded Date
-								</label>
+								</p>
 								<p className="text-lg font-bold">{nft.completionDate}</p>
 							</div>
 							<div>
-								<label className="block text-[10px] uppercase font-black text-white/30 tracking-[3px] mb-2">
+								<p className="block text-[10px] uppercase font-black text-white/70 tracking-[3px] mb-2">
 									Reputation Earned
-								</label>
+								</p>
 								<p className="text-lg font-black text-brand-emerald">
 									+{nft.reputationPoints}
 								</p>
 							</div>
 							<div className="col-span-2">
-								<label className="block text-[10px] uppercase font-black text-white/30 tracking-[3px] mb-2">
+								<p className="block text-[10px] uppercase font-black text-white/70 tracking-[3px] mb-2">
 									Issued By
-								</label>
+								</p>
 								<div className="flex items-center gap-3">
 									<div className="w-8 h-8 rounded-full bg-linear-to-r from-brand-cyan to-brand-blue" />
 									<p className="text-lg font-bold text-gradient">
@@ -104,7 +116,7 @@ const Credential: React.FC = () => {
 							href={nft.stellarExpertUrl}
 							target="_blank"
 							rel="noreferrer"
-							className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#00d2ff] hover:underline"
+							className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-cyan hover:underline"
 						>
 							View on Stellar Expert ↗
 						</a>
@@ -116,16 +128,27 @@ const Credential: React.FC = () => {
 				<a
 					href={`https://twitter.com/intent/tweet?text=I've just earned my ${nft.programName} credential on @LearnVault!`}
 					className="px-10 py-4 bg-[#1d9bf0] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-[#1d9bf0]/20"
+					aria-label={`Share ${nft.programName} credential on Twitter`}
 				>
 					Share to Twitter / X
 				</a>
 				<button
+					type="button"
 					onClick={copyToClipboard}
 					className="px-10 py-4 glass text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border border-white/10"
 				>
 					{copySuccess ? "Link Copied!" : "Copy Shareable Link"}
 				</button>
 			</div>
+			{copySuccess && (
+				<p
+					className="text-sm text-brand-emerald"
+					role="status"
+					aria-live="polite"
+				>
+					Credential link copied to clipboard.
+				</p>
+			)}
 		</div>
 	)
 }

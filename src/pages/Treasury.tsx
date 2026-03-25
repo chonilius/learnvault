@@ -1,4 +1,5 @@
 import React from "react"
+import { Helmet } from "react-helmet"
 import {
 	AreaChart,
 	Area,
@@ -8,6 +9,7 @@ import {
 	Tooltip,
 	ResponsiveContainer,
 } from "recharts"
+import ActivityFeed from "../components/ActivityFeed"
 
 const Treasury: React.FC = () => {
 	// Mock data for the treasury health chart
@@ -28,8 +30,21 @@ const Treasury: React.FC = () => {
 		donorsCount: "842",
 	}
 
+	const siteUrl = "https://learnvault.app"
+	const title = `Treasury — ${stats.totalTreasury} · ${stats.scholarsFunded} Scholars Funded — LearnVault`
+	const description = `LearnVault's decentralized scholarship treasury holds ${stats.totalTreasury} and has funded ${stats.scholarsFunded} scholars. View real-time inflows and disbursements.`
+
 	return (
 		<div className="p-12 max-w-7xl mx-auto min-h-screen text-white animate-in fade-in duration-1000">
+			<Helmet>
+				<title>{title}</title>
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
+				<meta property="og:url" content={`${siteUrl}/treasury`} />
+				<meta name="twitter:card" content="summary_large_image" />
+			</Helmet>
+
 			<header className="text-center mb-20 relative">
 				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-cyan/20 blur-[100px] rounded-full -z-10" />
 				<h1 className="text-7xl font-black mb-4 tracking-tighter text-gradient">
@@ -155,38 +170,16 @@ const Treasury: React.FC = () => {
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
 				<ActivityFeed
+					address={undefined}
+					limit={5}
+					filter="deposit"
 					title="Recent Community Deposits"
-					items={[
-						{
-							user: "G...A1B2",
-							amount: "+500 USDC",
-							time: "2h ago",
-							type: "deposit",
-						},
-						{
-							user: "G...C3D4",
-							amount: "+1,200 USDC",
-							time: "5h ago",
-							type: "deposit",
-						},
-					]}
 				/>
 				<ActivityFeed
+					address={undefined}
+					limit={5}
+					filter="disburse"
 					title="Latest Disbursements"
-					items={[
-						{
-							user: "Scholar...FFF",
-							amount: "-150 USDC",
-							time: "1h ago",
-							type: "disburse",
-						},
-						{
-							user: "Scholar...GGG",
-							amount: "-150 USDC",
-							time: "3h ago",
-							type: "disburse",
-						},
-					]}
 				/>
 			</div>
 
@@ -205,7 +198,7 @@ const StatCard: React.FC<{
 	icon: string
 	color: string
 }> = ({ label, value, icon, color }) => (
-	<div className="glass-card p-8 rounded-[2rem] hover:border-white/20 transition-all hover:-translate-y-2 group">
+	<div className="glass-card p-8 rounded-4xl hover:border-white/20 transition-all hover:-translate-y-2 group">
 		<div className="text-3xl mb-4 group-hover:scale-125 transition-transform duration-500">
 			{icon}
 		</div>
@@ -226,42 +219,6 @@ const LegendItem: React.FC<{ color: string; label: string }> = ({
 			style={{ backgroundColor: color }}
 		/>
 		<span className="text-xs font-bold text-white/60">{label}</span>
-	</div>
-)
-
-const ActivityFeed: React.FC<{ title: string; items: any[] }> = ({
-	title,
-	items,
-}) => (
-	<div className="glass p-8 rounded-[2.5rem] border border-white/5">
-		<h3 className="text-xl font-black mb-8 border-l-4 border-brand-cyan pl-4">
-			{title}
-		</h3>
-		<div className="flex flex-col gap-4">
-			{items.map((item, i) => (
-				<div
-					key={i}
-					className="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-colors group"
-				>
-					<div className="flex items-center gap-4">
-						<div
-							className={`w-2 h-2 rounded-full ${item.type === "deposit" ? "bg-brand-emerald animate-pulse" : "bg-brand-purple"}`}
-						/>
-						<div>
-							<p className="font-bold text-sm">{item.user}</p>
-							<p className="text-[10px] text-white/30 uppercase font-black tracking-widest">
-								{item.time}
-							</p>
-						</div>
-					</div>
-					<p
-						className={`font-black ${item.type === "deposit" ? "text-brand-emerald" : "text-white/80"}`}
-					>
-						{item.amount}
-					</p>
-				</div>
-			))}
-		</div>
 	</div>
 )
 

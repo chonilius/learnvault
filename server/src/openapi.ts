@@ -1,11 +1,11 @@
-import path from "node:path";
+import path from "node:path"
 
-import swaggerJSDoc from "swagger-jsdoc";
+import swaggerJSDoc from "swagger-jsdoc"
 
 export const buildOpenApiSpec = () => {
-  const sourceGlob = path.resolve(__dirname, "./routes/*.ts");
-  const transpiledGlob = path.resolve(__dirname, "./routes/*.js");
-  const rootSourceGlob = path.resolve(__dirname, "../src/routes/*.ts");
+	const sourceGlob = path.resolve(__dirname, "./routes/*.ts")
+	const transpiledGlob = path.resolve(__dirname, "./routes/*.js")
+	const rootSourceGlob = path.resolve(__dirname, "../src/routes/*.ts")
 
   return swaggerJSDoc({
     definition: {
