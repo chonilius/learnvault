@@ -1,6 +1,8 @@
 import { Button, Icon, Layout } from "@stellar/design-system"
 import { Routes, Route, Outlet, NavLink } from "react-router-dom"
 import styles from "./App.module.css"
+import { ToastProvider } from "./components/Toast/ToastProvider"
+import { WalletToastWatcher } from "./components/WalletToastWatcher"
 import { ComingSoon } from "./components/ComingSoon"
 import ConnectAccount from "./components/ConnectAccount"
 import CourseCard from "./components/CourseCard"
@@ -28,6 +30,8 @@ import Treasury from "./pages/Treasury"
 
 function App() {
 	return (
+		<ToastProvider>
+		<WalletToastWatcher />
 		<Routes>
 			<Route element={<AppLayout />}>
 				<Route path="/" element={<Home />} />
@@ -54,6 +58,7 @@ function App() {
 				<Route path="*" element={<NotFound />} />
 			</Route>
 		</Routes>
+		</ToastProvider>
 	)
 }
 

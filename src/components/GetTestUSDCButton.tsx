@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@stellar/design-system"
 import React, { useState, useTransition } from "react"
 import { useTranslation } from "react-i18next"
-import { useNotification } from "../hooks/useNotification.ts"
+import { useToast } from "./Toast/ToastProvider"
 import { useWallet } from "../hooks/useWallet.ts"
 import { mintTestUSDC } from "../util/usdc.ts"
 
@@ -12,7 +12,7 @@ interface GetTestUSDCButtonProps {
 const GetTestUSDCButton: React.FC<GetTestUSDCButtonProps> = ({
 	amount = 1000,
 }) => {
-	const { addNotification } = useNotification()
+	const { showSuccess, showError } = useToast()
 	const { t } = useTranslation()
 	const [isPending, startTransition] = useTransition()
 	const [isTooltipVisible, setIsTooltipVisible] = useState(false)
@@ -24,14 +24,13 @@ const GetTestUSDCButton: React.FC<GetTestUSDCButtonProps> = ({
 		startTransition(async () => {
 			try {
 				await mintTestUSDC(address, amount)
-				addNotification(
+				showSuccess(
 					t("usdc.mintSuccess", { amount, address: address.slice(0, 8) }),
-					"success",
 				)
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : "Unknown error"
-				addNotification(t("usdc.mintError", { error: errorMessage }), "error")
+				showError(t("usdc.mintError", { error: errorMessage }))
 			}
 		})
 	}
