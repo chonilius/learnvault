@@ -2,6 +2,8 @@ import { type Api } from "@stellar/stellar-sdk/rpc"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
+import { ErrorCode, createAppError } from "../types/errors"
+import { parseError, isUserRejection } from "../utils/errors"
 import { useContractIds } from "./useContractIds"
 import { useSubscription } from "./useSubscription"
 import { useWallet } from "./useWallet"
@@ -20,13 +22,30 @@ const generatedContractModules = import.meta.glob("../contracts/*.ts")
  */
 const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
 	const moduleLoader = generatedContractModules["../contracts/learn_token.ts"]
-	if (!moduleLoader) return null
+	if (!moduleLoader) {
+		console.warn(
+			createAppError(
+				ErrorCode.CONTRACT_NOT_DEPLOYED,
+				"LearnToken contract module not found",
+				{ contractName: "learn_token" },
+			),
+		)
+		return null
+	}
 
 	try {
 		const mod = (await moduleLoader()) as ContractRecord
 
 		return (mod.default as ContractRecord) ?? mod
-	} catch {
+	} catch (err) {
+		console.warn(
+			createAppError(
+				ErrorCode.CONTRACT_NOT_DEPLOYED,
+				"Failed to load LearnToken contract",
+				{ contractName: "learn_token" },
+				err,
+			),
+		)
 		return null
 	}
 }
@@ -108,7 +127,7 @@ export interface UseLearnTokenResult {
 export function useLearnToken(address?: string): UseLearnTokenResult {
 	const { address: walletAddress, signTransaction } = useWallet()
 	const { learnToken: contractId, isDeployed } = useContractIds()
-	const { showSuccess, showError } = useToast()
+	const { showSuccess, showError, showInfo } = useToast()
 	const queryClient = useQueryClient()
 
 	const targetAddress = address ?? walletAddress
@@ -215,7 +234,17 @@ export function useLearnToken(address?: string): UseLearnTokenResult {
 		},
 
 		onError: (error: unknown) => {
-			const message = error instanceof Error ? error.message : "Mint failed"
+			if (isUserRejection(error)) {
+				showInfo("Mint cancelled")
+				return
+			}
+			const appError = parseError(error)
+			const message =
+				appError.code === ErrorCode.CONTRACT_NOT_DEPLOYED
+					? "LearnToken contract is not available on this network"
+					: appError.code === ErrorCode.WALLET_NOT_CONNECTED
+						? "Please connect your wallet to mint tokens"
+						: "Mint failed. Please try again."
 			showError(message)
 		},
 	})

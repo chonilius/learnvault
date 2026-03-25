@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
+import { ErrorCode, createAppError } from "../types/errors"
 import { type Proposal, type RawContractProposal } from "../types/governance"
+import { parseError, isUserRejection } from "../utils/errors"
 import { useWallet } from "./useWallet"
 
 export type { Proposal }
@@ -22,7 +24,7 @@ const GOVERNANCE_TOKEN_CONTRACT = readEnv("PUBLIC_GOVERNANCE_TOKEN_CONTRACT")
 export function useGovernance() {
 	const { address, signTransaction } = useWallet()
 	const queryClient = useQueryClient()
-	const { showSuccess, showError } = useToast()
+	const { showSuccess, showError, showInfo } = useToast()
 
 	// Helper to load contract clients
 	const loadClient = useCallback(async (path: string) => {
@@ -32,7 +34,15 @@ export function useGovernance() {
 				unknown
 			>
 			return (mod.default as Record<string, unknown>) ?? mod
-		} catch {
+		} catch (err) {
+			console.warn(
+				createAppError(
+					ErrorCode.CONTRACT_NOT_DEPLOYED,
+					"Contract not available",
+					{ contractPath: path },
+					err,
+				),
+			)
 			return null
 		}
 	}, [])
@@ -70,7 +80,8 @@ export function useGovernance() {
 
 			const raw = await getProposalsFn()
 			// Transform contract response to Proposal interface
-			return (Array.isArray(raw) ? raw : []).map((p: RawContractProposal) => ({
+			const proposals = Array.isArray(raw) ? raw : []
+			return (proposals as RawContractProposal[]).map((p) => ({
 				id: Number(p.id ?? 0),
 				title: String(p.title ?? ""),
 				description: String(p.description ?? ""),
@@ -186,8 +197,17 @@ export function useGovernance() {
 		},
 
 		onError: (error: unknown) => {
+			if (isUserRejection(error)) {
+				showInfo("Vote cancelled")
+				return
+			}
+			const appError = parseError(error)
 			const message =
-				error instanceof Error ? error.message : "Vote transaction failed"
+				appError.code === ErrorCode.WALLET_NOT_CONNECTED
+					? "Please connect your wallet to vote"
+					: appError.code === ErrorCode.CONTRACT_NOT_DEPLOYED
+						? "Voting is not available on this network"
+						: "Vote failed. Please try again."
 			showError(message)
 		},
 	})
