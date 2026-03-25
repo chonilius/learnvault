@@ -1,4 +1,5 @@
 import React from "react"
+import { Helmet } from "react-helmet"
 import {
 	AreaChart,
 	Area,
@@ -28,8 +29,21 @@ const Treasury: React.FC = () => {
 		donorsCount: "842",
 	}
 
+	const siteUrl = "https://learnvault.app"
+	const title = `Treasury — ${stats.totalTreasury} · ${stats.scholarsFunded} Scholars Funded — LearnVault`
+	const description = `LearnVault's decentralized scholarship treasury holds ${stats.totalTreasury} and has funded ${stats.scholarsFunded} scholars. View real-time inflows and disbursements.`
+
 	return (
 		<div className="p-12 max-w-7xl mx-auto min-h-screen text-white animate-in fade-in duration-1000">
+			<Helmet>
+				<title>{title}</title>
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
+				<meta property="og:url" content={`${siteUrl}/treasury`} />
+				<meta name="twitter:card" content="summary_large_image" />
+			</Helmet>
+
 			<header className="text-center mb-20 relative">
 				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-cyan/20 blur-[100px] rounded-full -z-10" />
 				<h1 className="text-7xl font-black mb-4 tracking-tighter text-gradient">
@@ -205,7 +219,7 @@ const StatCard: React.FC<{
 	icon: string
 	color: string
 }> = ({ label, value, icon, color }) => (
-	<div className="glass-card p-8 rounded-[2rem] hover:border-white/20 transition-all hover:-translate-y-2 group">
+	<div className="glass-card p-8 rounded-4xl hover:border-white/20 transition-all hover:-translate-y-2 group">
 		<div className="text-3xl mb-4 group-hover:scale-125 transition-transform duration-500">
 			{icon}
 		</div>

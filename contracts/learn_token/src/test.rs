@@ -1,7 +1,6 @@
 extern crate std;
 
 use soroban_sdk::{testutils::{Address as _, Events as _}, Address, Env, IntoVal, String};
-use soroban_sdk::{Address, Env, testutils::Address as _};
 
 use crate::{LRNError, LearnToken, LearnTokenClient};
 
@@ -18,9 +17,6 @@ fn setup(e: &Env) -> (Address, Address, LearnTokenClient) {
     (id, admin, client)
 }
 
-fn cid(e: &Env, s: &str) -> String {
-    String::from_str(e, s)
-}
 
 // ---------------------------------------------------------------------------
 // Initialization
@@ -71,7 +67,7 @@ fn mint_increases_balance_and_total_supply() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
-    client.mint(&learner, &100, &cid(&e, "web3-101"));
+    client.mint(&learner, &100);
     assert_eq!(client.balance(&learner), 100);
     assert_eq!(client.total_supply(), 100);
 }
@@ -81,9 +77,9 @@ fn mint_accumulates_across_multiple_calls() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
-    client.mint(&learner, &50, &cid(&e, "web3-101"));
-    client.mint(&learner, &75, &cid(&e, "defi-201"));
-    client.mint(&learner, &25, &cid(&e, "zk-301"));
+    client.mint(&learner, &50);
+    client.mint(&learner, &75);
+    client.mint(&learner, &25);
     assert_eq!(client.balance(&learner), 150);
     assert_eq!(client.total_supply(), 150);
 }
@@ -93,7 +89,7 @@ fn mint_zero_amount_reverts() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
-    let result = client.try_mint(&learner, &0, &cid(&e, "web3-101"));
+    let result = client.try_mint(&learner, &0);
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -107,7 +103,7 @@ fn mint_negative_amount_reverts() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
-    let result = client.try_mint(&learner, &-1, &cid(&e, "web3-101"));
+    let result = client.try_mint(&learner, &-1);
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -123,7 +119,7 @@ fn mint_before_initialize_reverts() {
     e.mock_all_auths();
     let client = LearnTokenClient::new(&e, &id);
     let learner = Address::generate(&e);
-    let result = client.try_mint(&learner, &100, &cid(&e, "web3-101"));
+    let result = client.try_mint(&learner, &100);
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -142,7 +138,7 @@ fn transfer_is_blocked() {
     let (_, _, client) = setup(&e);
     let a = Address::generate(&e);
     let b = Address::generate(&e);
-    client.mint(&a, &50, &cid(&e, "web3-101"));
+    client.mint(&a, &50);
     let result = client.try_transfer(&a, &b, &10);
     assert_eq!(
         result.err(),
@@ -159,7 +155,7 @@ fn transfer_from_is_blocked() {
     let spender = Address::generate(&e);
     let from = Address::generate(&e);
     let to = Address::generate(&e);
-    client.mint(&from, &50, &cid(&e, "web3-101"));
+    client.mint(&from, &50);
     let result = client.try_transfer_from(&spender, &from, &to, &10);
     assert_eq!(
         result.err(),
@@ -217,7 +213,7 @@ fn unauthorized_mint_fails() {
 
     // Now call mint with no auth mocked — should fail
     let learner = Address::generate(&e);
-    let result = client.try_mint(&learner, &100, &cid(&e, "web3-101"));
+    let result = client.try_mint(&learner, &100);
     assert!(result.is_err());
 }
 
@@ -228,7 +224,7 @@ fn set_admin_updates_admin() {
     let new_admin = Address::generate(&e);
     client.set_admin(&new_admin);
     let learner = Address::generate(&e);
-    client.mint(&learner, &10, &cid(&e, "web3-101"));
+    client.mint(&learner, &10);
     assert_eq!(client.balance(&learner), 10);
 }
 
@@ -266,7 +262,7 @@ fn reputation_score_mirrors_balance_after_mint() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
-    client.mint(&learner, &200, &cid(&e, "defi-201"));
+    client.mint(&learner, &200);
     assert_eq!(client.reputation_score(&learner), client.balance(&learner));
     assert_eq!(client.reputation_score(&learner), 200);
 }
@@ -349,15 +345,15 @@ fn only_course_milestone_contract_can_mint() {
         invoke: &soroban_sdk::testutils::MockAuthInvoke {
             contract: &id,
             fn_name: "mint",
-            args: (learner.clone(), 100_i128, cid(&e, "web3-101")).into_val(&e),
+            args: (learner.clone(), 100_i128).into_val(&e),
             sub_invokes: &[],
         },
     }]);
-    client.mint(&learner, &100, &cid(&e, "web3-101"));
+    client.mint(&learner, &100);
     assert_eq!(client.balance(&learner), 100);
 
     // Deployer is no longer admin — mint must fail (no auth mocked).
-    let result = client.try_mint(&learner, &50, &cid(&e, "web3-102"));
+    let result = client.try_mint(&learner, &50);
     assert!(result.is_err());
 }
 
@@ -373,9 +369,9 @@ fn multiple_learners_have_independent_balances() {
     let bob = Address::generate(&e);
     let carol = Address::generate(&e);
 
-    client.mint(&alice, &100, &cid(&e, "web3-101"));
-    client.mint(&bob, &200, &cid(&e, "defi-201"));
-    client.mint(&carol, &300, &cid(&e, "zk-301"));
+    client.mint(&alice, &100);
+    client.mint(&bob, &200);
+    client.mint(&carol, &300);
 
     assert_eq!(client.balance(&alice), 100);
     assert_eq!(client.balance(&bob), 200);
@@ -390,11 +386,11 @@ fn balance_is_unaffected_by_other_learners_mints() {
     let alice = Address::generate(&e);
     let bob = Address::generate(&e);
 
-    client.mint(&alice, &50, &cid(&e, "web3-101"));
+    client.mint(&alice, &50);
     let alice_balance_before = client.balance(&alice);
 
     // Minting to Bob must not change Alice's balance.
-    client.mint(&bob, &999, &cid(&e, "defi-201"));
+    client.mint(&bob, &999);
     assert_eq!(client.balance(&alice), alice_balance_before);
 }
 
@@ -412,7 +408,7 @@ fn mint_emits_one_event() {
     let learner = Address::generate(&e);
 
     let before = e.events().all().len();
-    client.mint(&learner, &100, &cid(&e, "web3-101"));
+    client.mint(&learner, &100);
     assert_eq!(e.events().all().len(), before + 1);
 }
 
@@ -424,12 +420,12 @@ fn each_mint_call_emits_exactly_one_event() {
     let (_, _, client) = setup(&e);
     let learner = Address::generate(&e);
 
-    client.mint(&learner, &100, &cid(&e, "web3-101"));
+    client.mint(&learner, &100);
     assert_eq!(e.events().all().len(), 1);
 
     // Second independent call — the buffer is scoped per invocation, so
     // there is still exactly one event (from this call) in the window.
-    client.mint(&learner, &50, &cid(&e, "defi-201"));
+    client.mint(&learner, &50);
     assert_eq!(e.events().all().len(), 1);
 }
 
@@ -454,7 +450,7 @@ fn mint_to_fresh_address_is_credited_correctly() {
     // Address::generate produces a brand-new address with no on-chain history.
     let fresh = Address::generate(&e);
     assert_eq!(client.balance(&fresh), 0);
-    client.mint(&fresh, &42, &cid(&e, "web3-101"));
+    client.mint(&fresh, &42);
     assert_eq!(client.balance(&fresh), 42);
     assert_eq!(client.total_supply(), 42);
 }

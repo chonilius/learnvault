@@ -4,6 +4,8 @@ import { milestoneStore } from "../db/milestone-store"
 import { type AdminRequest } from "../middleware/admin.middleware"
 import { stellarContractService } from "../services/stellar-contract.service"
 
+// ── GET /api/admin/milestones/pending ────────────────────────────────────────
+
 export async function getPendingMilestones(
 	_req: Request,
 	res: Response,
@@ -96,6 +98,10 @@ export async function approveMilestone(
 	}
 }
 
+const rejectBodySchema = z.object({
+	reason: z.string().min(1, "Rejection reason is required"),
+})
+
 export async function rejectMilestone(
 	req: AdminRequest,
 	res: Response,
@@ -105,10 +111,6 @@ export async function rejectMilestone(
 		res.status(400).json({ error: "Invalid milestone report id" })
 		return
 	}
-
-	const rejectBodySchema = z.object({
-		reason: z.string().min(1, "Rejection reason is required"),
-	})
 
 	const parsed = rejectBodySchema.safeParse(req.body)
 	if (!parsed.success) {
@@ -149,6 +151,11 @@ export async function rejectMilestone(
 			rejection_reason: reason,
 			contract_tx_hash: contractResult.txHash,
 		})
+
+		// TODO: send email notification to scholar (integrate email service here)
+		console.info(
+			`[admin] Scholar ${report.scholar_address} notified of rejection for milestone ${report.milestone_id} in course ${report.course_id}`,
+		)
 
 		res.status(200).json({
 			data: {

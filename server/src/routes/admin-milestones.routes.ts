@@ -1,10 +1,15 @@
 import { Router } from "express"
-import * as controllers from "../controllers/admin-milestones.controller"
+import {
+	getPendingMilestones,
+	getMilestoneById,
+	approveMilestone,
+	rejectMilestone,
+} from "../controllers/admin-milestones.controller"
 import { submitMilestoneReport } from "../controllers/milestone-submit.controller"
 import { requireAdmin } from "../middleware/admin.middleware"
 import { milestoneSubmitRateLimiter } from "../middleware/milestone-rate-limit.middleware"
 
-const router = Router()
+export const adminMilestonesRouter = Router()
 
 /**
  * @openapi
@@ -22,10 +27,10 @@ const router = Router()
  *       403:
  *         $ref: '#/components/responses/ForbiddenError'
  */
-router.get(
+adminMilestonesRouter.get(
 	"/admin/milestones/pending",
 	requireAdmin,
-	controllers.getPendingMilestones,
+	getPendingMilestones,
 )
 
 /**
@@ -51,7 +56,11 @@ router.get(
  *       404:
  *         $ref: '#/components/responses/NotFoundError'
  */
-router.get("/admin/milestones/:id", requireAdmin, controllers.getMilestoneById)
+adminMilestonesRouter.get(
+	"/admin/milestones/:id",
+	requireAdmin,
+	getMilestoneById,
+)
 
 /**
  * @openapi
@@ -78,10 +87,10 @@ router.get("/admin/milestones/:id", requireAdmin, controllers.getMilestoneById)
  *       409:
  *         description: Report already processed
  */
-router.post(
+adminMilestonesRouter.post(
 	"/admin/milestones/:id/approve",
 	requireAdmin,
-	controllers.approveMilestone,
+	approveMilestone,
 )
 
 /**
@@ -121,10 +130,10 @@ router.post(
  *       409:
  *         description: Report already processed
  */
-router.post(
+adminMilestonesRouter.post(
 	"/admin/milestones/:id/reject",
 	requireAdmin,
-	controllers.rejectMilestone,
+	rejectMilestone,
 )
 
 /**
@@ -165,10 +174,8 @@ router.post(
  *       429:
  *         description: Rate limit exceeded
  */
-router.post(
+adminMilestonesRouter.post(
 	"/milestones/submit",
 	milestoneSubmitRateLimiter,
 	submitMilestoneReport,
 )
-
-export { router as adminMilestonesRouter }

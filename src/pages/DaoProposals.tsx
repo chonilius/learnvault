@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react"
+import { Helmet } from "react-helmet"
 
 type ProposalStatus = "Active" | "Passed" | "Rejected"
 type VoteType = "YES" | "NO" | null
@@ -204,8 +205,25 @@ const DaoProposals: React.FC = () => {
 		}
 	}
 
+	const siteUrl = "https://learnvault.app"
+	const title = selectedProposal
+		? `${selectedProposal.title} — $${selectedProposal.usdcRequested} USDC · ${selectedProposal.userVote ?? "Not Voted"} — LearnVault DAO`
+		: "DAO Proposals — LearnVault"
+	const description = selectedProposal
+		? `${selectedProposal.title} is requesting $${selectedProposal.usdcRequested} USDC. Status: ${selectedProposal.status}. Cast your vote on LearnVault DAO.`
+		: "Review and vote on scholarship proposals in the LearnVault community DAO."
+
 	return (
 		<div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
+			<Helmet>
+				<title>{title}</title>
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
+				<meta property="og:url" content={`${siteUrl}/dao`} />
+				<meta name="twitter:card" content="summary_large_image" />
+			</Helmet>
+
 			<header className="mb-16 text-center">
 				<h1 className="text-6xl font-black mb-4 tracking-tighter text-gradient">
 					DAO Proposals

@@ -156,7 +156,9 @@ impl LearnToken {
     }
 
     // -----------------------------------------------------------------------
-    // SEP-41 read functions
+    // SEP-41 read functions (fungible token interface)
+    // These functions comply with Stellar Enhancement Proposal 41
+    // https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md
     // -----------------------------------------------------------------------
 
     pub fn balance(env: Env, account: Address) -> i128 {

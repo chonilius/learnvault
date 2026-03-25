@@ -21,8 +21,10 @@
 10. [Tech Stack](#tech-stack)
 11. [Roadmap](#roadmap)
 12. [Whitepaper Generation](#whitepaper-generation)
-13. [Contributing](#contributing)
-14. [Contact](#contact)
+13. [Running Tests](#running-tests)
+14. [Contributing](#contributing)
+15. [Resources](#resources)
+16. [Contact](#contact)
 
 ---
 
@@ -87,7 +89,6 @@ stablecoins — real, stable value delivered directly to their wallets.
 ---
 
 ## Platform Architecture
-
 ```
 ┌─────────────────────────────────────────────────────┐
 │                     LEARNVAULT                       │
@@ -184,7 +185,6 @@ Shareable with employers, DAOs, and the broader ecosystem.
 ## The Earn Loop
 
 LearnVault's flywheel is designed so that effort compounds over time:
-
 ```
 Complete Lesson
        │
@@ -197,14 +197,18 @@ Complete Full Track ──▶ Convert LRN to Governance Tokens
        ▼
 Submit Scholarship Proposal
        │
-       ▼
-Community Votes YES
-       │
-       ▼
-Milestone-Based Funding Released
-       │
-       ▼
-Complete Funded Program
+      3. **Friendbot Funding (Testnet Only):**
+   ```bash
+   # Fund your deployer address for testing
+   stellar friendbot fund <NETWORK> <ADDRESS>
+   
+   # Example:
+   stellar friendbot fund testnet GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+   ```
+
+**Deployer Address:**
+- For testing on Stellar Testnet, use the friendbot-funded deployer:
+  `GDU2P3YJ5K7E6ZK3Q2K7E6ZK3Q2K7E6ZK3Q2K7E6ZK3`
        │
        ▼
 Mint ScholarNFT Credential
@@ -320,19 +324,57 @@ transfers to token holders.
 
 ## Whitepaper Generation
 
-The LearnVault Technical Whitepaper is authored in Markdown and exported to PDF. To ensure Mermaid diagrams render correctly in the PDF export, follow this two-step build process:
+The LearnVault Technical Whitepaper is authored in Markdown and exported to PDF.
+To ensure Mermaid diagrams render correctly in the PDF export, follow this
+two-step build process:
 
-1. **Compile Diagrams to Images:**
-   Generate static PNGs from the Mermaid source files using the Mermaid CLI:
+1. **Compile Diagrams to Images:** Generate static PNGs from the Mermaid source
+   files using the Mermaid CLI:
+
    ```bash
    npx @mermaid-js/mermaid-cli -i docs/architecture.mmd -o docs/architecture.png
-   ```
+```
 
-2. **Generate the PDF:**
-   Once the diagrams are compiled and embedded as standard markdown image links, generate the final PDF using `md-to-pdf`:
+2. **Generate the PDF:** Once the diagrams are compiled and embedded as standard
+   markdown image links, generate the final PDF using `md-to-pdf`:
    ```bash
    npx md-to-pdf docs/whitepaper.md
+```
+
+---
+
+## Running Tests
+
+### Prerequisites
+
+1. **Install Rust and Stellar CLI:**
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   npm install -g @stellar/stellar-cli
    ```
+
+2. **Install Visual Studio Build Tools (Windows):**
+   ```bash
+   # Download Visual Studio Build Tools installer
+   # Visit: https://visualstudio.microsoft.com/downloads/
+   # Or use winget: wing install VisualStudio.2022.BuildTools
+   ```
+
+3. **Configure Environment:**
+   ```bash
+   # Copy environment template
+   cp .env.example .env
+   
+   # Edit .env with your configuration
+   # Set STELLAR_SCAFFOLD_ENV=testnet for testnet deployment
+   ```
+
+### Run Tests
+```bash
+npm test                 # runs all Soroban contract tests
+npm run test:contracts   # alias for the above
+npm run test:watch       # re-runs tests on file changes
+```
 
 ---
 
@@ -354,6 +396,12 @@ All contributors are recognized on-chain and in our official documentation.
 
 ---
 
+## Resources
+
+- [Glossary](docs/glossary.md) — Key terms, tokens, and contracts explained in plain English
+
+---
+
 ## Contact
 
 For partnerships, sponsorships, grant inquiries, or general questions about
@@ -367,5 +415,7 @@ LearnVault, please reach out through our official channels.
 ---
 
 _LearnVault — Built for African learners. Powered by community. Governed by
-effort._
-\n## Architecture Decisions\n\n- [ADR-001.md](docs/adr/ADR-001.md)\n- [ADR-002.md](docs/adr/ADR-002.md)\n- [ADR-003.md](docs/adr/ADR-003.md)\n- [ADR-004.md](docs/adr/ADR-004.md)\n- [ADR-005.md](docs/adr/ADR-005.md)\n- [ADR-006.md](docs/adr/ADR-006.md)\n- [ADR-007.md](docs/adr/ADR-007.md)\n
+effort._ \n## Architecture Decisions\n\n- [ADR-001.md](docs/adr/ADR-001.md)\n-
+[ADR-002.md](docs/adr/ADR-002.md)\n- [ADR-003.md](docs/adr/ADR-003.md)\n-
+[ADR-004.md](docs/adr/ADR-004.md)\n- [ADR-005.md](docs/adr/ADR-005.md)\n-
+[ADR-006.md](docs/adr/ADR-006.md)\n- [ADR-007.md](docs/adr/ADR-007.md)\n

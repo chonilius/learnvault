@@ -21,7 +21,6 @@ import { healthRouter } from "./routes/health.routes"
 import { createMeRouter } from "./routes/me.routes"
 import { uploadRouter } from "./routes/upload.routes"
 import { validatorRouter } from "./routes/validator.routes"
-
 import { createAuthService } from "./services/auth.service"
 import {
 	createJwtService,

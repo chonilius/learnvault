@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import { Helmet } from "react-helmet"
 import { useParams } from "react-router-dom"
 
 const Credential: React.FC = () => {
@@ -17,6 +18,10 @@ const Credential: React.FC = () => {
 		reputationPoints: "50 LRN",
 	}
 
+	const siteUrl = "https://learnvault.app"
+	const title = `${nft.scholarName} earned "${nft.programName}" — LearnVault`
+	const description = `${nft.scholarName} completed "${nft.programName}" on ${nft.completionDate} and earned a verified ScholarNFT credential on LearnVault.`
+
 	const copyToClipboard = () => {
 		void navigator.clipboard.writeText(window.location.href).catch(() => {})
 		setCopySuccess(true)
@@ -25,11 +30,20 @@ const Credential: React.FC = () => {
 
 	return (
 		<div className="py-20 px-6 min-h-screen flex flex-col items-center gap-16 text-white relative overflow-hidden">
+			<Helmet>
+				<title>{title}</title>
+				<meta property="og:title" content={title} />
+				<meta property="og:description" content={description} />
+				<meta property="og:image" content={nft.artworkUrl} />
+				<meta property="og:url" content={`${siteUrl}/credentials/${nft.id}`} />
+				<meta name="twitter:card" content="summary_large_image" />
+			</Helmet>
+
 			{/* Background Glows */}
 			<div className="absolute top-1/4 left-1/4 w-[50%] h-[50%] bg-brand-cyan/10 blur-[150px] rounded-full -z-10" />
 			<div className="absolute bottom-1/4 right-1/4 w-[50%] h-[50%] bg-brand-purple/10 blur-[150px] rounded-full -z-10" />
 
-			<div className="iridescent-border p-[1px] rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-1000">
+			<div className="iridescent-border p-px rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-1000">
 				<div className="glass-card w-full max-w-5xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10">
 					{/* Artwork Section */}
 					<div className="md:w-5/12 relative aspect-square md:aspect-auto group">
@@ -104,7 +118,7 @@ const Credential: React.FC = () => {
 							href={nft.stellarExpertUrl}
 							target="_blank"
 							rel="noreferrer"
-							className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#00d2ff] hover:underline"
+							className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-cyan hover:underline"
 						>
 							View on Stellar Expert ↗
 						</a>
