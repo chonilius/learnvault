@@ -55,7 +55,7 @@ export const courses: Course[] = [
 		level: "Beginner",
 		description:
 			"Get productive on Stellar testnet with wallets, funding flows, and Soroban-powered apps.",
-		firstLesson: "Your first Stellar transaction on testnet",
+		firstLesson: "Introduction to Stellar & the Stellar Network",
 		outcomes: ["Stellar primitives", "Testnet workflow", "Soroban foundations"],
 		accentClassName: "from-brand-cyan/25 via-brand-blue/20 to-transparent",
 	},

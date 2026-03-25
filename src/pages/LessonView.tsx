@@ -1,13 +1,13 @@
+import { Button } from "@stellar/design-system"
 import React, { useEffect, useMemo, useState } from "react"
 import { useParams, Navigate } from "react-router-dom"
-import { Button } from "@stellar/design-system"
+import LessonContent from "../components/LessonContent"
+import LessonSidebar from "../components/LessonSidebar"
 import { courses } from "../data/courses"
 import { getCourseLessons, getLesson } from "../data/lessons"
-import { useWallet } from "../hooks/useWallet"
 import { useCourse } from "../hooks/useCourse"
+import { useWallet } from "../hooks/useWallet"
 import { connectWallet } from "../util/wallet"
-import LessonSidebar from "../components/LessonSidebar"
-import LessonContent from "../components/LessonContent"
 import NotFound from "./NotFound"
 
 const LessonView: React.FC = () => {
@@ -38,10 +38,7 @@ const LessonView: React.FC = () => {
 		() => getLesson(courseId || "", lessonId),
 		[courseId, lessonId],
 	)
-	const allLessons = useMemo(
-		() => getCourseLessons(courseId || ""),
-		[courseId],
-	)
+	const allLessons = useMemo(() => getCourseLessons(courseId || ""), [courseId])
 
 	if (!course || !lesson) {
 		return <NotFound />
@@ -67,7 +64,9 @@ const LessonView: React.FC = () => {
 							/>
 						</svg>
 					</div>
-					<h2 className="text-3xl font-bold mb-4 text-white">Wallet Required</h2>
+					<h2 className="text-3xl font-bold mb-4 text-white">
+						Wallet Required
+					</h2>
 					<p className="text-white/60 mb-8 text-lg">
 						Please connect your wallet to access track content and track your
 						learning milestones on-chain.
@@ -93,7 +92,7 @@ const LessonView: React.FC = () => {
 	// Check if the current lesson is locked
 	const previousCompleted =
 		lessonIndex === 0 ||
-		completedMilestones.includes(allLessons[lessonIndex - 1].id)
+		completedMilestones.includes(allLessons[lessonIndex - 1]?.id ?? -1)
 
 	if (!isCompleted && !previousCompleted && lessonIndex > 0) {
 		return (
@@ -115,16 +114,17 @@ const LessonView: React.FC = () => {
 		)
 	}
 
-	const prevLessonId = lessonIndex > 0 ? allLessons[lessonIndex - 1].id : null
+	const prevLessonId =
+		lessonIndex > 0 ? (allLessons[lessonIndex - 1]?.id ?? null) : null
 	const nextLessonId =
 		lessonIndex < allLessons.length - 1
-			? allLessons[lessonIndex + 1].id
+			? (allLessons[lessonIndex + 1]?.id ?? null)
 			: null
 
 	const isNextLocked = !isCompleted
 
 	const handleMarkComplete = () => {
-		void completeMilestone(courseId, lessonId)
+		void completeMilestone(courseId ?? "", lessonId)
 	}
 
 	return (

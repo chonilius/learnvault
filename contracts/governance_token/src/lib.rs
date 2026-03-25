@@ -62,13 +62,19 @@ pub struct GovernanceToken;
 #[contractimpl]
 impl GovernanceToken {
     /// Initialise the contract. Can only be called once.
-    pub fn initialize(env: Env, admin: Address, name: String, symbol: String) {
+    ///
+    /// Sets name = "LearnVault Governance", symbol = "GOV", decimals = 7.
+    pub fn initialize(env: Env, admin: Address) {
         if env.storage().instance().has(&ADMIN_KEY) {
             panic_with_error!(&env, GOVError::Unauthorized);
         }
         env.storage().instance().set(&ADMIN_KEY, &admin);
-        env.storage().instance().set(&NAME_KEY, &name);
-        env.storage().instance().set(&SYMBOL_KEY, &symbol);
+        env.storage()
+            .instance()
+            .set(&NAME_KEY, &String::from_str(&env, "LearnVault Governance"));
+        env.storage()
+            .instance()
+            .set(&SYMBOL_KEY, &String::from_str(&env, "GOV"));
         env.storage().instance().set(&DECIMALS_KEY, &7_u32);
     }
 
@@ -234,11 +240,7 @@ mod test {
         let id = e.register(GovernanceToken, ());
         e.mock_all_auths();
         let client = GovernanceTokenClient::new(e, &id);
-        client.initialize(
-            &admin,
-            &String::from_str(e, "GovernanceToken"),
-            &String::from_str(e, "GOV"),
-        );
+        client.initialize(&admin);
         (id, admin, client)
     }
 
@@ -248,7 +250,7 @@ mod test {
     fn initialize_stores_metadata() {
         let e = Env::default();
         let (_, _, client) = setup(&e);
-        assert_eq!(client.name(), String::from_str(&e, "GovernanceToken"));
+        assert_eq!(client.name(), String::from_str(&e, "LearnVault Governance"));
         assert_eq!(client.symbol(), String::from_str(&e, "GOV"));
         assert_eq!(client.decimals(), 7);
     }
@@ -257,11 +259,8 @@ mod test {
     fn double_initialize_reverts() {
         let e = Env::default();
         let (_, admin, client) = setup(&e);
-        let result = client.try_initialize(
-            &admin,
-            &String::from_str(&e, "GovernanceToken"),
-            &String::from_str(&e, "GOV"),
-        );
+        let _ = admin; // already initialized via setup
+        let result = client.try_initialize(&Address::generate(&e));
         assert_eq!(
             result.err(),
             Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -318,21 +317,12 @@ mod test {
             invoke: &soroban_sdk::testutils::MockAuthInvoke {
                 contract: &id,
                 fn_name: "initialize",
-                args: (
-                    admin.clone(),
-                    String::from_str(&e, "GovernanceToken"),
-                    String::from_str(&e, "GOV"),
-                )
-                    .into_val(&e),
+                args: (admin.clone(),).into_val(&e),
                 sub_invokes: &[],
             },
         }]);
         let client = GovernanceTokenClient::new(&e, &id);
-        client.initialize(
-            &admin,
-            &String::from_str(&e, "GovernanceToken"),
-            &String::from_str(&e, "GOV"),
-        );
+        client.initialize(&admin);
         let donor = Address::generate(&e);
         let result = client.try_mint(&donor, &100);
         assert!(result.is_err());

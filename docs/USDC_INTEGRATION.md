@@ -1,10 +1,12 @@
 # USDC Integration Guide
 
-This document explains how to use USDC (USD Coin) with LearnVault on Stellar Testnet and Mainnet.
+This document explains how to use USDC (USD Coin) with LearnVault on Stellar
+Testnet and Mainnet.
 
 ## Overview
 
-LearnVault's `ScholarshipTreasury` contract accepts USDC deposits from donors. This integration provides:
+LearnVault's `ScholarshipTreasury` contract accepts USDC deposits from donors.
+This integration provides:
 
 - Test USDC tokens for development and testing
 - A faucet script to mint test USDC
@@ -14,13 +16,18 @@ LearnVault's `ScholarshipTreasury` contract accepts USDC deposits from donors. T
 ## Contract Addresses
 
 ### Mainnet
-- **Official Circle USDC**: `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`
+
+- **Official Circle USDC**:
+  `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`
 
 ### Testnet
+
 - For testnet, we use a test token deployed as a Stellar Asset Contract
-- The contract ID is configured in `environments.toml` and deployed automatically
+- The contract ID is configured in `environments.toml` and deployed
+  automatically
 
 ### Local Development
+
 - A test USDC token is deployed automatically when you run `npm start`
 - The contract uses the `fungible_allowlist` contract as a USDC substitute
 
@@ -68,25 +75,29 @@ Use the provided faucet script to mint test USDC:
 ```
 
 **Example:**
+
 ```bash
 ./scripts/mint-test-usdc.sh GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX 1000
 ```
 
 ### Method 2: UI Button (Coming Soon)
 
-A "Get Test USDC" button is available in the donor onboarding flow. This button will:
+A "Get Test USDC" button is available in the donor onboarding flow. This button
+will:
 
 1. Connect to your wallet
 2. Mint test USDC tokens to your address
 3. Display a success notification
 
-**Note:** The UI button currently directs users to use the CLI script. Full UI integration will be available once contract clients are generated.
+**Note:** The UI button currently directs users to use the CLI script. Full UI
+integration will be available once contract clients are generated.
 
 ## Using USDC with ScholarshipTreasury
 
 ### Initialize the Treasury
 
-When deploying the `ScholarshipTreasury` contract, pass the USDC contract address:
+When deploying the `ScholarshipTreasury` contract, pass the USDC contract
+address:
 
 ```rust
 scholarship_treasury::initialize(
@@ -110,6 +121,7 @@ scholarship_treasury::deposit(
 ```
 
 **Example:** To deposit 100 USDC:
+
 ```rust
 let amount = 100 * 10_000_000;  // 100 USDC = 1,000,000,000 stroops
 scholarship_treasury::deposit(env, donor, amount);
@@ -124,6 +136,7 @@ npm start
 ```
 
 This will:
+
 - Start a local Stellar node
 - Deploy all contracts including the test USDC token
 - Generate contract clients
@@ -147,6 +160,7 @@ stellar keys fund <your-address> --network testnet
 ### 4. Test Donations
 
 Use the LearnVault UI to:
+
 1. Connect your wallet
 2. Navigate to the Treasury/Donor page
 3. Make a test donation using your USDC
@@ -192,7 +206,8 @@ For mainnet, use the official Circle USDC contract:
 PUBLIC_USDC_CONTRACT_ID="CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75"
 ```
 
-**Important:** Never use test tokens on mainnet. Always use the official Circle USDC contract.
+**Important:** Never use test tokens on mainnet. Always use the official Circle
+USDC contract.
 
 ## Troubleshooting
 
@@ -203,27 +218,33 @@ PUBLIC_USDC_CONTRACT_ID="CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI7
 ### "Failed to mint USDC"
 
 **Possible causes:**
+
 1. Contract not deployed
 2. Insufficient permissions
 3. Network connectivity issues
 
-**Solution:** 
-- Verify the contract is deployed: `stellar contract info --id <contract-id> --network <network>`
+**Solution:**
+
+- Verify the contract is deployed:
+  `stellar contract info --id <contract-id> --network <network>`
 - Check you have admin/manager permissions
 - Ensure you're connected to the correct network
 
 ### "Contract not found"
 
-**Solution:** Deploy the contracts first by running `npm start` (local) or deploying to testnet.
+**Solution:** Deploy the contracts first by running `npm start` (local) or
+deploying to testnet.
 
 ## Security Considerations
 
 ### Testnet
+
 - Test USDC has no real value
 - Use only for development and testing
 - Never share testnet private keys publicly
 
 ### Mainnet
+
 - Use only the official Circle USDC contract
 - Verify the contract address before any transaction
 - Test thoroughly on testnet before mainnet deployment

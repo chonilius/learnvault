@@ -104,7 +104,24 @@
 		},
 		"leaderboard": {
 			"title": "Leaderboard",
-			"desc": "This is the Leaderboard page."
+			"desc": "Top learners ranked by LRN token balance. Earn your place.",
+			"rank": "Rank",
+			"learner": "Learner",
+			"lrnBalance": "LRN Balance",
+			"courses": "Courses",
+			"joined": "Joined",
+			"searchPlaceholder": "Search by wallet address...",
+			"filterAll": "All Time",
+			"filterMonth": "This Month",
+			"filterWeek": "This Week",
+			"myRank": "My Rank",
+			"loadMore": "Load More",
+			"prev": "Previous",
+			"next": "Next",
+			"noResults": "No learners found matching your search.",
+			"connectPrompt": "Connect your wallet to see your rank.",
+			"notRanked": "Not ranked yet",
+			"page": "Page {{current}} of {{total}}"
 		},
 		"profile": {
 			"title": "My Profile",

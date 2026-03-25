@@ -16,7 +16,9 @@
     "docs:generate": "npm run docs:generate --prefix server",
     "prepare": "husky",
     "typecheck": "tsc",
-    "test": "vitest run"
+    "test": "cargo test --workspace",
+    "test:contracts": "cargo test --workspace",
+    "test:watch": "cargo watch -x 'test --workspace'"
   },
   "workspaces": [
     "packages/*"

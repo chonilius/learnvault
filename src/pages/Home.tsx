@@ -6,6 +6,7 @@ import { Link } from "react-router-dom"
 import { GuessTheNumber } from "../components/GuessTheNumber"
 import { MilestoneTracker } from "../components/MilestoneTracker"
 import OnboardingWizard from "../components/OnboardingWizard"
+import { WalletAddressPill } from "../components/WalletAddressPill"
 
 const Home: React.FC = () => {
 	const { t } = useTranslation()
@@ -68,6 +69,34 @@ const Home: React.FC = () => {
 						</Link>
 					</div>
 				</header>
+				<div className="flex justify-center mb-8">
+					<WalletAddressPill 
+						address="GABC1234567890ABCDEFGHWXYZ" 
+						showLink={true} 
+					/>
+				</div>
+
+				<h1 className="text-7xl md:text-8xl font-black mb-8 tracking-tighter text-gradient leading-[0.9] animate-in slide-in-from-bottom-12 duration-1000 delay-200">
+					{t("home.heroTitle")}
+				</h1>
+				<p className="text-xl md:text-2xl text-white/50 mb-12 max-w-2xl mx-auto font-medium leading-relaxed animate-in slide-in-from-bottom-12 duration-1000 delay-400">
+					{t("home.heroDesc")}
+				</p>
+				<div className="flex flex-wrap justify-center gap-6 animate-in slide-in-from-bottom-12 duration-1000 delay-600">
+					<Link
+						to="/courses"
+						className="iridescent-border px-12 py-5 rounded-2xl font-black text-lg uppercase tracking-widest hover:scale-105 active:scale-95 transition-all group relative overflow-hidden shadow-2xl shadow-brand-cyan/20"
+					>
+						<span className="relative z-10">Browse Tracks</span>
+					</Link>
+					<Link
+						to="/learn"
+						className="px-12 py-5 glass text-white rounded-2xl font-black text-lg uppercase tracking-widest hover:bg-white/10 hover:scale-105 active:scale-95 transition-all border border-white/10"
+					>
+						{t("nav.learn")}
+					</Link>
+				</div>
+			</header>
 
 				<main className="w-full max-w-6xl flex flex-col gap-12 relative z-10 animate-in slide-in-from-bottom-12 duration-1000 delay-800">
 					{/* Upstream Content: Course Progress */}
