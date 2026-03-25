@@ -470,9 +470,8 @@ pub use governance::GovernanceTokenClient;
 mod token {
     #[cfg(test)]
     mod test_token {
-        use soroban_sdk::{symbol_short, Address, Env, Symbol};
+        use soroban_sdk::{Address, Env};
 
-        // const TOKEN_KEY: Symbol = symbol_short!("TOK");
         use super::super::USDC_KEY;
 
         pub fn contract_id(env: &Env) -> Address {
