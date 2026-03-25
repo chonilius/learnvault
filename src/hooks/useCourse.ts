@@ -154,7 +154,7 @@ const waitForMintEvent = async (
 }
 
 export function useCourse() {
-	const { address, signTransaction } = useWallet()
+	const { address, signTransaction, updateBalances } = useWallet()
 	const { addNotification } = useNotification()
 
 	const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
@@ -331,6 +331,7 @@ export function useCourse() {
 						"Milestone completed (local fallback mode)",
 						"success",
 					)
+					await updateBalances()
 					return
 				}
 
@@ -365,6 +366,7 @@ export function useCourse() {
 						: "Milestone complete. LRN mint event confirmed",
 					"success",
 				)
+				await updateBalances()
 				await refreshCourses()
 			} catch {
 				addNotification("Failed to complete milestone", "error")
@@ -378,6 +380,7 @@ export function useCourse() {
 			getCourseProgress,
 			refreshCourses,
 			signTransaction,
+			updateBalances,
 		],
 	)
 

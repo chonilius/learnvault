@@ -1,18 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
+import { type Proposal, type RawContractProposal } from "../types/governance"
 import { useWallet } from "./useWallet"
 
-export interface Proposal {
-	id: number
-	title: string
-	description: string
-	author: string
-	status: "Active" | "Passed" | "Rejected"
-	votesFor: bigint
-	votesAgainst: bigint
-	endDate: number // timestamp
-}
+export type { Proposal }
 
 const readEnv = (key: string): string | undefined => {
 	const value = (import.meta.env as Record<string, unknown>)[key]
@@ -78,7 +70,7 @@ export function useGovernance() {
 
 			const raw = await getProposalsFn()
 			// Transform contract response to Proposal interface
-			return (Array.isArray(raw) ? raw : []).map((p: any) => ({
+			return (Array.isArray(raw) ? raw : []).map((p: RawContractProposal) => ({
 				id: Number(p.id ?? 0),
 				title: String(p.title ?? ""),
 				description: String(p.description ?? ""),
