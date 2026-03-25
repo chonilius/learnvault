@@ -1,171 +1,54 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { Helmet } from "react-helmet"
-<<<<<<< HEAD
-import { useToast } from "../components/Toast/ToastProvider"
-=======
 import { useSearchParams } from "react-router-dom"
+import { useToast } from "../components/Toast/ToastProvider"
 import Pagination from "../components/Pagination"
->>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
+import { useGovernance, type Proposal } from "../hooks/useGovernance"
 
-type ProposalStatus = "Active" | "Passed" | "Rejected"
-type VoteType = "YES" | "NO" | null
 type FilterType = "Active" | "Passed" | "Rejected" | "All"
 
-type Milestone = {
-	title: string
-	description: string
-}
-
-type Proposal = {
-	id: string
-	title: string
-	description: string
-	author: string
-	status: ProposalStatus
-	votesFor: number
-	votesAgainst: number
-	endDate: string
-	usdcRequested: number
-	lrnScore: number
-	milestones: Milestone[]
-	quorumRequired: number
-	userVote: VoteType
-}
-
-const MOCK_PROPOSALS: Proposal[] = [
-	{
-		id: "1",
-		title: "Frontend Scholarship",
-		description:
-			"A scholarship proposal for learners focused on frontend development, React fundamentals, and project-based open-source contribution.",
-		author: "GA7B...4Y2K",
-		status: "Active",
-		votesFor: 320,
-		votesAgainst: 80,
-		endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(),
-		usdcRequested: 500,
-		lrnScore: 82,
-		milestones: [
-			{
-				title: "Milestone 1",
-				description:
-					"Complete HTML, CSS, JavaScript, and responsive design basics.",
-			},
-			{
-				title: "Milestone 2",
-				description:
-					"Build React projects and submit at least one open-source pull request.",
-			},
-		],
-		quorumRequired: 500,
-		userVote: null,
-	},
-	{
-		id: "2",
-		title: "Blockchain Scholarship",
-		description:
-			"A scholarship proposal for blockchain learners covering wallet basics, smart contracts, and Stellar ecosystem development.",
-		author: "GBSU...9R3T",
-		status: "Passed",
-		votesFor: 700,
-		votesAgainst: 100,
-		endDate: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-		usdcRequested: 900,
-		lrnScore: 91,
-		milestones: [
-			{
-				title: "Milestone 1",
-				description: "Learn wallets, transactions, and blockchain foundations.",
-			},
-			{
-				title: "Milestone 2",
-				description: "Build and test smart-contract-based mini projects.",
-			},
-		],
-		quorumRequired: 500,
-		userVote: "YES",
-	},
-	{
-		id: "3",
-		title: "AI Scholarship",
-		description:
-			"A scholarship proposal focused on AI fundamentals, model usage, and beginner machine learning workflows.",
-		author: "GC8X...7P1L",
-		status: "Rejected",
-		votesFor: 140,
-		votesAgainst: 260,
-		endDate: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
-		usdcRequested: 650,
-		lrnScore: 76,
-		milestones: [
-			{
-				title: "Milestone 1",
-				description: "Complete Python and data fundamentals.",
-			},
-			{
-				title: "Milestone 2",
-				description: "Build a simple ML project and publish documentation.",
-			},
-		],
-		quorumRequired: 500,
-		userVote: "NO",
-	},
-]
-
-const governanceTokens = 128.45
-const isTokenHolder = true
 const filterGroupLabelId = "dao-proposals-filter-label"
 const voteHelpId = "dao-proposals-vote-help"
 
 const shortenAddress = (address: string) => {
+	if (!address) return ""
 	if (address.includes("...")) return address
 	if (address.length <= 10) return address
 	return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-const getTimeRemaining = (endDate: string) => {
-	const diff = new Date(endDate).getTime() - Date.now()
-
-	if (diff <= 0) return "Ended"
-
-	const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-	const hours = Math.floor((diff / (1000 * 60 * 60)) % 24)
-	const minutes = Math.floor((diff / (1000 * 60)) % 60)
-
-	return `${days}d ${hours}h ${minutes}m`
+const getTimeRemaining = (endDate: number) => {
+	// If endDate is a ledger sequence, this is simplified. 
+	// In a real app we'd multiply by average block time or fetch current ledger.
+	// For now, let's treat it as a placeholder.
+	if (!endDate) return "Unknown"
+	return "Active"
 }
 
-const ITEMS_PER_PAGE = 2
+const ITEMS_PER_PAGE = 5
 
 const DaoProposals: React.FC = () => {
 	const [searchParams, setSearchParams] = useSearchParams()
-	const parsedPage = Number.parseInt(searchParams.get("page") || "1", 10)
-	const currentPage =
-		Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
+	const { proposals, votingPower, castVote, isVoting, hasVoted, isLoadingProposals } = useGovernance()
+	
+	const parsedPage = parseInt(searchParams.get("page") || "1", 10)
+	const currentPage = isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
+	
 	const [filter, setFilter] = useState<FilterType>("Active")
-	const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
-		null,
-	)
-	const [isSubmittingVote, setIsSubmittingVote] = useState(false)
-	const { showSuccess, showError } = useToast()
+	const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
+	
+	const { showInfo } = useToast()
 
 	const filteredProposals = useMemo(() => {
-		if (filter === "All") return MOCK_PROPOSALS
-		return MOCK_PROPOSALS.filter((proposal) => proposal.status === filter)
-	}, [filter])
+		if (filter === "All") return proposals
+		return proposals.filter((p) => p.status === filter)
+	}, [filter, proposals])
 
-	const totalPages = Math.max(
-		1,
-		Math.ceil(filteredProposals.length / ITEMS_PER_PAGE),
-	)
-
+	const totalPages = Math.max(1, Math.ceil(filteredProposals.length / ITEMS_PER_PAGE))
 	const safePage = Math.min(currentPage, totalPages)
 
 	const startIndex = (safePage - 1) * ITEMS_PER_PAGE
-	const currentProposals = filteredProposals.slice(
-		startIndex,
-		startIndex + ITEMS_PER_PAGE,
-	)
+	const currentProposals = filteredProposals.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
 	useEffect(() => {
 		if (currentPage !== safePage) {
@@ -173,71 +56,18 @@ const DaoProposals: React.FC = () => {
 		}
 	}, [currentPage, safePage, setSearchParams])
 
+	// Auto-select first proposal if none selected or if filter changes
 	useEffect(() => {
-		if (filteredProposals.length === 0) {
+		if (filteredProposals.length > 0 && (!selectedProposal || !filteredProposals.find(p => p.id === selectedProposal.id))) {
+			setSelectedProposal(filteredProposals[0])
+		} else if (filteredProposals.length === 0) {
 			setSelectedProposal(null)
-			return
-		}
-
-		const stillVisible = filteredProposals.find(
-			(proposal) => proposal.id === selectedProposal?.id,
-		)
-
-		if (!stillVisible) {
-			const firstVisible = filteredProposals[0]
-			if (firstVisible) {
-				setSelectedProposal(firstVisible)
-			}
 		}
 	}, [filteredProposals, selectedProposal])
 
-	const totalVotes = selectedProposal
-		? selectedProposal.votesFor + selectedProposal.votesAgainst
-		: 0
-
-	const yesPercent =
-		selectedProposal && totalVotes > 0
-			? (selectedProposal.votesFor / totalVotes) * 100
-			: 0
-
-	const noPercent =
-		selectedProposal && totalVotes > 0
-			? (selectedProposal.votesAgainst / totalVotes) * 100
-			: 0
-
-	const quorumReached = selectedProposal
-		? totalVotes >= selectedProposal.quorumRequired
-		: false
-
-	const voteDisabled =
-		!selectedProposal ||
-		!isTokenHolder ||
-		selectedProposal.userVote !== null ||
-		selectedProposal.status !== "Active"
-
-	const getVoteDisabledMessage = () => {
-		if (!selectedProposal) return ""
-		if (!isTokenHolder) return "You must be a token holder to vote."
-		if (selectedProposal.userVote)
-			return "You have already voted on this proposal."
-		if (selectedProposal.status !== "Active")
-			return "Voting is closed for this proposal."
-		return ""
-	}
-
-	const handleVote = async (vote: "YES" | "NO") => {
-		if (!selectedProposal || voteDisabled) return
-
-		setIsSubmittingVote(true)
-
-		try {
-			await new Promise((resolve) => setTimeout(resolve, 1500))
-			showSuccess(`Vote ${vote} recorded successfully!`)
-		} catch {
-			showError("Transaction failed. Please try again.")
-		} finally {
-			setIsSubmittingVote(false)
-		}
+	const handleVote = async (support: boolean) => {
+		if (!selectedProposal) return
+		await castVote(selectedProposal.id, support)
 	}
 
 	const handlePageChange = (newPage: number) => {
@@ -245,25 +75,37 @@ const DaoProposals: React.FC = () => {
 		window.scrollTo({ top: 0, behavior: "smooth" })
 	}
 
-	const voteDisabledMessage = getVoteDisabledMessage()
+	const totalVotes = selectedProposal ? (selectedProposal.votesFor + selectedProposal.votesAgainst) : 0n
+	const yesPercent = totalVotes > 0n ? Number((selectedProposal!.votesFor * 100n) / totalVotes) : 0
+	const noPercent = totalVotes > 0n ? Number((selectedProposal!.votesAgainst * 100n) / totalVotes) : 0
+
+	const userHasVoted = selectedProposal ? hasVoted(selectedProposal.id) : false
+	const voteDisabled = !selectedProposal || userHasVoted || selectedProposal.status !== "Active" || votingPower === 0n
+
+	const getVoteDisabledMessage = () => {
+		if (!selectedProposal) return ""
+		if (votingPower === 0n) return "You must hold GOV tokens to vote."
+		if (userHasVoted) return "You have already cast your vote."
+		if (selectedProposal.status !== "Active") return "Voting is closed for this proposal."
+		return ""
+	}
 
 	const siteUrl = "https://learnvault.app"
-	const title = selectedProposal
-		? `${selectedProposal.title} — $${selectedProposal.usdcRequested} USDC · ${selectedProposal.userVote ?? "Not Voted"} — LearnVault DAO`
-		: "DAO Proposals — LearnVault"
-	const description = selectedProposal
-		? `${selectedProposal.title} is requesting $${selectedProposal.usdcRequested} USDC. Status: ${selectedProposal.status}. Cast your vote on LearnVault DAO.`
-		: "Review and vote on scholarship proposals in the LearnVault community DAO."
+	const title = selectedProposal ? `${selectedProposal.title} — LearnVault DAO` : "DAO Proposals — LearnVault"
+
+	if (isLoadingProposals) {
+		return (
+			<div className="p-12 max-w-5xl mx-auto text-center h-[60vh] flex flex-col items-center justify-center">
+				<div className="w-12 h-12 border-4 border-brand-cyan/20 border-t-brand-cyan rounded-full animate-spin mb-4" />
+				<p className="text-white/60 font-medium">Loading Governance Proposals...</p>
+			</div>
+		)
+	}
 
 	return (
 		<div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
 			<Helmet>
 				<title>{title}</title>
-				<meta property="og:title" content={title} />
-				<meta property="og:description" content={description} />
-				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
-				<meta property="og:url" content={`${siteUrl}/dao`} />
-				<meta name="twitter:card" content="summary_large_image" />
 			</Helmet>
 
 			<header className="mb-16 text-center">
@@ -271,310 +113,134 @@ const DaoProposals: React.FC = () => {
 					DAO Proposals
 				</h1>
 				<p className="text-white/70 text-lg font-medium max-w-2xl mx-auto">
-					Governance token holders can review scholarship proposals and cast
-					votes.
+					Review scholarship proposals and cast your vote with GOV tokens.
 				</p>
 			</header>
 
-			<div
-				className="flex flex-wrap gap-3 mb-8 justify-center"
-				role="group"
-				aria-labelledby={filterGroupLabelId}
-			>
-				<p id={filterGroupLabelId} className="sr-only">
-					Filter proposals by status
-				</p>
-				{(["Active", "Passed", "Rejected", "All"] as FilterType[]).map(
-					(item) => (
-						<button
-							type="button"
-							key={item}
-<<<<<<< HEAD
-							onClick={() => setFilter(item)}
-=======
-							onClick={() => {
-								setFilter(item)
-								// FIX: Explicit reset on filter change (prevents stale page from old filter).
-								setSearchParams({ page: "1" })
-								setTxMessage("")
-							}}
->>>>>>> f5e9c20 (feat: add reusable pagination to courses, proposals, and leaderboard)
-							aria-pressed={filter === item}
-							className={`px-5 py-2.5 rounded-full border text-xs font-black uppercase tracking-widest transition-all ${
-								filter === item
-									? "bg-brand-cyan/10 border-brand-cyan/40 text-brand-cyan"
-									: "bg-white/5 border-white/10 text-white/70 hover:border-brand-cyan/30 hover:text-brand-cyan"
-							}`}
-						>
-							{item}
-						</button>
-					),
-				)}
+			<div className="flex flex-wrap gap-3 mb-8 justify-center">
+				{(["Active", "Passed", "Rejected", "All"] as FilterType[]).map((item) => (
+					<button
+						key={item}
+						onClick={() => {
+							setFilter(item)
+							setSearchParams({ page: "1" })
+						}}
+						className={`px-5 py-2.5 rounded-full border text-xs font-black uppercase tracking-widest transition-all ${
+							filter === item
+								? "bg-brand-cyan/10 border-brand-cyan/40 text-brand-cyan"
+								: "bg-white/5 border-white/10 text-white/70 hover:border-brand-cyan/30"
+						}`}
+					>
+						{item}
+					</button>
+				))}
 			</div>
 
 			{selectedProposal && (
-				<section
-					className="glass-card p-10 rounded-[2.5rem] border border-white/5 mb-10"
-					aria-labelledby="selected-proposal-title"
-				>
+				<section className="glass-card p-10 rounded-[2.5rem] border border-white/5 mb-10">
 					<div className="flex justify-between items-start gap-6 mb-6">
 						<div>
-							<h2
-								id="selected-proposal-title"
-								className="text-4xl font-black tracking-tight mb-3"
-							>
+							<h2 className="text-4xl font-black tracking-tight mb-3">
 								{selectedProposal.title}
 							</h2>
-							<div className="flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-widest">
-								<span className="text-brand-cyan">
-									Applicant {shortenAddress(selectedProposal.author)}
-								</span>
+							<div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
+								<span className="text-brand-cyan">Applicant {shortenAddress(selectedProposal.author)}</span>
 								<span className="w-1.5 h-1.5 bg-white/20 rounded-full" />
-								<span className="text-white/70">
-									Time Remaining {getTimeRemaining(selectedProposal.endDate)}
-								</span>
+								<span className="text-white/70">ID #{selectedProposal.id}</span>
 							</div>
 						</div>
-
-						<div className="px-5 py-2 bg-brand-cyan/10 border border-brand-cyan/30 rounded-full">
-							<span className="text-brand-cyan text-xs font-black uppercase tracking-widest">
-								{selectedProposal.status}
-							</span>
+						<div className="px-5 py-2 bg-brand-cyan/10 border border-brand-cyan/30 rounded-full text-brand-cyan text-xs font-black uppercase">
+							{selectedProposal.status}
 						</div>
 					</div>
 
 					<div className="grid gap-8 md:grid-cols-2">
 						<div>
-							<div className="grid grid-cols-2 gap-4 mb-8">
-								<div className="rounded-[1.75rem] border border-white/5 bg-white/5 p-5">
-									<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-2">
-										USDC Requested
-									</p>
-									<h3 className="text-2xl font-black">
-										{selectedProposal.usdcRequested}
-									</h3>
-								</div>
-
-								<div className="rounded-[1.75rem] border border-white/5 bg-white/5 p-5">
-									<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-2">
-										LRN Score
-									</p>
-									<h3 className="text-2xl font-black">
-										{selectedProposal.lrnScore}
-									</h3>
-								</div>
-							</div>
-
-							<h3 className="text-xl font-black mb-3 tracking-tight">
-								Program Description
-							</h3>
+							<h3 className="text-xl font-black mb-3">Description</h3>
 							<p className="text-white/70 leading-relaxed mb-8">
 								{selectedProposal.description}
 							</p>
-
-							<h3 className="text-xl font-black mb-3 tracking-tight">
-								Milestone Breakdown
-							</h3>
-							<div className="space-y-4">
-								{selectedProposal.milestones.map((milestone, index) => (
-									<div
-										key={index}
-										className="rounded-[1.5rem] border border-white/5 bg-white/5 p-5"
-									>
-										<p className="font-black mb-1">{milestone.title}</p>
-										<p className="text-sm text-white/70 leading-relaxed">
-											{milestone.description}
-										</p>
-									</div>
-								))}
+							
+							<div className="rounded-[1.75rem] border border-white/5 bg-white/5 p-6">
+								<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-2">My Voting Power</p>
+								<h3 className="text-2xl font-black">{votingPower.toString()} GOV</h3>
 							</div>
 						</div>
 
 						<div>
-							<h3 className="text-xl font-black mb-4 tracking-tight">
-								Voting Overview
-							</h3>
-
-							<div className="mb-5">
-								<div className="flex justify-between text-xs font-black uppercase tracking-widest mb-2 text-white/85">
-									<span>YES {yesPercent.toFixed(1)}%</span>
-									<span>NO {noPercent.toFixed(1)}%</span>
+							<h3 className="text-xl font-black mb-4">Voting Stats</h3>
+							<div className="mb-6">
+								<div className="flex justify-between text-xs font-black uppercase tracking-widest mb-2">
+									<span>YES {yesPercent}%</span>
+									<span>NO {noPercent}%</span>
 								</div>
-
-								<div
-									className="w-full h-3 rounded-full bg-white/5 overflow-hidden flex"
-									aria-hidden="true"
-								>
-									<div
-										className="h-full bg-brand-cyan"
-										style={{ width: `${yesPercent}%` }}
-									/>
-									<div
-										className="h-full bg-brand-purple"
-										style={{ width: `${noPercent}%` }}
-									/>
+								<div className="w-full h-3 rounded-full bg-white/5 overflow-hidden flex">
+									<div className="h-full bg-brand-cyan" style={{ width: `${yesPercent}%` }} />
+									<div className="h-full bg-brand-purple" style={{ width: `${noPercent}%` }} />
 								</div>
 							</div>
 
-							<div className="space-y-3 text-sm text-white/70 mb-6">
-								<p>
-									Current quorum: {totalVotes} /{" "}
-									{selectedProposal.quorumRequired}
-								</p>
-								<p>
-									Quorum status: {quorumReached ? "Reached" : "Not reached"}
-								</p>
-								<p>
-									Your current vote:{" "}
-									{selectedProposal.userVote
-										? selectedProposal.userVote
-										: "Not voted"}
-								</p>
-								<p>
-									Your vote = {governanceTokens.toFixed(2)} governance tokens
-								</p>
-								<p>
-									Countdown timer: {getTimeRemaining(selectedProposal.endDate)}
-								</p>
+							<div className="space-y-3 mb-8 text-sm text-white/60">
+								<p>For: {selectedProposal.votesFor.toString()} GOV</p>
+								<p>Against: {selectedProposal.votesAgainst.toString()} GOV</p>
+								<p>Status: {userHasVoted ? "Voted" : "Not Voted"}</p>
 							</div>
 
-							<div className="flex flex-wrap gap-3">
+							<div className="flex gap-3">
 								<button
-									type="button"
-									onClick={() => handleVote("YES")}
-									disabled={voteDisabled || isSubmittingVote}
-									aria-describedby={
-										voteDisabledMessage ? voteHelpId : undefined
-									}
-									className="px-6 py-3 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-black uppercase tracking-widest rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+									onClick={() => handleVote(true)}
+									disabled={voteDisabled || isVoting}
+									className="px-8 py-3 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-black uppercase tracking-widest rounded-full hover:bg-brand-cyan/20 disabled:opacity-30 transition-all font-bold"
 								>
-									{isSubmittingVote ? "Submitting..." : "Vote YES"}
+									{isVoting ? "Voting..." : "Vote YES"}
 								</button>
-
 								<button
-									type="button"
-									onClick={() => handleVote("NO")}
-									disabled={voteDisabled || isSubmittingVote}
-									aria-describedby={
-										voteDisabledMessage ? voteHelpId : undefined
-									}
-									className="px-6 py-3 bg-brand-purple/10 border border-brand-purple/30 text-brand-purple font-black uppercase tracking-widest rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+									onClick={() => handleVote(false)}
+									disabled={voteDisabled || isVoting}
+									className="px-8 py-3 bg-brand-purple/10 border border-brand-purple/30 text-brand-purple font-black uppercase tracking-widest rounded-full hover:bg-brand-purple/20 disabled:opacity-30 transition-all font-bold"
 								>
-									{isSubmittingVote ? "Submitting..." : "Vote NO"}
+									{isVoting ? "Voting..." : "Vote NO"}
 								</button>
 							</div>
-
-							{voteDisabledMessage && (
-								<p id={voteHelpId} className="mt-4 text-sm text-white/70">
-									{voteDisabledMessage}
-								</p>
+							{getVoteDisabledMessage() && (
+								<p className="mt-4 text-xs text-white/40 font-medium italic">{getVoteDisabledMessage()}</p>
 							)}
 						</div>
 					</div>
 				</section>
 			)}
 
-			{currentProposals.length > 0 ? (
-				<div className="grid gap-6">
-					{currentProposals.map((proposal) => {
-						const approvalPercent = Math.round(
-							(proposal.votesFor /
-								(proposal.votesFor + proposal.votesAgainst)) *
-								100,
-						)
+			<div className="grid gap-6">
+				{currentProposals.map((proposal) => (
+					<button
+						key={proposal.id}
+						onClick={() => setSelectedProposal(proposal)}
+						className={`glass-card p-8 rounded-[2.5rem] border text-left transition-all ${
+							selectedProposal?.id === proposal.id ? "border-brand-cyan/40" : "border-white/5 hover:border-brand-cyan/20"
+						}`}
+					>
+						<div className="flex justify-between items-start mb-4">
+							<h2 className="text-2xl font-black mb-1">{proposal.title}</h2>
+							<span className="px-3 py-1 bg-white/5 text-[10px] uppercase font-black rounded-full border border-white/10">
+								{proposal.status}
+							</span>
+						</div>
+						<p className="text-sm text-white/60 mb-5 line-clamp-2">{proposal.description}</p>
+						<div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-white/40">
+							<span>For: {proposal.votesFor.toString()}</span>
+							<span>Against: {proposal.votesAgainst.toString()}</span>
+							<span className="ml-auto text-brand-cyan">View Details →</span>
+						</div>
+					</button>
+				))}
+			</div>
 
-						return (
-							<button
-								type="button"
-								key={proposal.id}
-								onClick={() => setSelectedProposal(proposal)}
-								aria-pressed={selectedProposal?.id === proposal.id}
-								aria-label={`Select ${proposal.title}, ${proposal.status} proposal`}
-								className={`glass-card p-8 rounded-[2.5rem] border text-left transition-all duration-300 ${
-									selectedProposal?.id === proposal.id
-										? "border-brand-cyan/40"
-										: "border-white/5 hover:border-brand-cyan/30 hover:-translate-y-1"
-								}`}
-							>
-								<div className="flex justify-between items-start gap-6 mb-5">
-									<div>
-										<h2 className="text-2xl font-black tracking-tight mb-2">
-											{proposal.title}
-										</h2>
-										<p className="text-sm text-white/70">
-											Applicant: {shortenAddress(proposal.author)}
-										</p>
-									</div>
-
-									<span className="px-4 py-1.5 bg-white/5 text-[10px] font-black uppercase tracking-widest rounded-full border border-white/10">
-										{proposal.status}
-									</span>
-								</div>
-
-								<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-									<div>
-										<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-1">
-											USDC Requested
-										</p>
-										<p className="font-bold">{proposal.usdcRequested}</p>
-									</div>
-
-									<div>
-										<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-1">
-											LRN Score
-										</p>
-										<p className="font-bold">{proposal.lrnScore}</p>
-									</div>
-
-									<div>
-										<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-1">
-											Time Remaining
-										</p>
-										<p className="font-bold">
-											{getTimeRemaining(proposal.endDate)}
-										</p>
-									</div>
-
-									<div>
-										<p className="text-[10px] text-white/70 uppercase font-black tracking-widest mb-1">
-											Total Votes
-										</p>
-										<p className="font-bold">
-											{proposal.votesFor + proposal.votesAgainst}
-										</p>
-									</div>
-								</div>
-
-								<div className="flex items-center gap-4">
-									<div
-										className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden"
-										aria-hidden="true"
-									>
-										<div
-											className="h-full bg-brand-cyan"
-											style={{ width: `${approvalPercent}%` }}
-										/>
-									</div>
-									<div className="text-[10px] font-black uppercase tracking-widest text-white/80">
-										{approvalPercent}% YES
-									</div>
-								</div>
-							</button>
-						)
-					})}
-				</div>
-			) : (
-				<div className="glass-card p-12 rounded-[2.5rem] border border-white/5 text-center">
-					<h3 className="text-2xl font-black mb-3">
-						{filter === "Active"
-							? "No active proposals at the moment."
-							: "No proposals found for this filter."}
-					</h3>
-					<p className="text-white/70">
-						Check back later for new governance proposals.
-					</p>
+			{filteredProposals.length === 0 && (
+				<div className="py-20 text-center opacity-50">
+					<p>No proposals found for this filter.</p>
 				</div>
 			)}
+
 			<Pagination
 				page={safePage}
 				totalPages={totalPages}

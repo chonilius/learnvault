@@ -67,7 +67,7 @@ export function useGovernance() {
 	})
 
 	// Fetch all proposals
-	const { data: proposals = [] } = useQuery<Proposal[]>({
+	const { data: proposals = [], isLoading: isLoadingProposals } = useQuery<Proposal[]>({
 		queryKey: ["governance", "proposals"],
 		queryFn: async () => {
 			if (!SCHOLARSHIP_TREASURY_CONTRACT) return []
@@ -79,27 +79,35 @@ export function useGovernance() {
 			if (typeof getProposalsFn !== "function") return []
 
 			const raw = await getProposalsFn()
-			// Transform contract response to Proposal interface
 			const proposals = Array.isArray(raw) ? raw : []
-			return (proposals as RawContractProposal[]).map((p) => ({
-				id: Number(p.id ?? 0),
-				title: String(p.title ?? ""),
-				description: String(p.description ?? ""),
-				author: String(p.author ?? p.author_address ?? ""),
-				status: (p.status ?? "Active") as Proposal["status"],
-				votesFor: BigInt(p.votes_for ?? p.votesFor ?? 0),
-				votesAgainst: BigInt(p.votes_against ?? p.votesAgainst ?? 0),
-				endDate: Number(p.end_date ?? p.endDate ?? 0),
-			}))
+			
+			// In a real app, we'd fetch the current ledger to derive status correctly.
+			// For now, we'll derive it from the proposal data we have.
+			return (proposals as RawContractProposal[]).map((p) => {
+				const votesFor = BigInt(p.yes_votes ?? p.votes_for ?? p.votesFor ?? 0)
+				const votesAgainst = BigInt(p.no_votes ?? p.votes_against ?? p.votesAgainst ?? 0)
+				const deadline = Number(p.deadline_ledger ?? p.end_date ?? p.endDate ?? 0)
+				
+				// Status derivation logic (simplified: if no status from contract, we could derive)
+				let status: Proposal["status"] = (p.status as Proposal["status"]) || "Active"
+				
+				return {
+					id: Number(p.id ?? 0),
+					title: String(p.program_name ?? p.title ?? ""),
+					description: String(p.program_description ?? p.description ?? ""),
+					author: String(p.applicant ?? p.author ?? p.author_address ?? ""),
+					status,
+					votesFor,
+					votesAgainst,
+					endDate: deadline,
+				}
+			})
 		},
 	})
 
 	// Check if voter has already voted on a specific proposal
 	const hasVoted = useCallback(
 		(proposalId: number) => {
-			// This could also be a query, but for the requested API we can check cache or fetch.
-			// Let's assume we fetch this info or it's part of the proposal list.
-			// Implementing as a query-backed check.
 			return !!queryClient.getQueryData([
 				"governance",
 				"voted",
@@ -130,7 +138,6 @@ export function useGovernance() {
 						const voted = await hasVotedFn({
 							voter: address,
 							proposal_id: p.id,
-							proposalId: p.id,
 						})
 						results[p.id] = !!voted
 						// Also update the individual cache
@@ -149,7 +156,7 @@ export function useGovernance() {
 	})
 
 	// Mutation for casting a vote
-	const { mutateAsync: vote, isPending: isVoting } = useMutation({
+	const { mutateAsync: castVote, isPending: isVoting } = useMutation({
 		mutationFn: async ({
 			proposalId,
 			support,
@@ -170,30 +177,34 @@ export function useGovernance() {
 			const tx = await voteFn(
 				{
 					proposal_id: proposalId,
-					proposalId: proposalId,
 					voter: address,
 					support,
 				},
 				{ publicKey: address },
 			)
 
-			// signAndSend is expected on the tx object from generated clients
+			// Generated clients return an object with signAndSend
 			if (tx && typeof tx.signAndSend === "function") {
 				await tx.signAndSend({ signTransaction })
+			} else {
+				// Fallback or manual signing if needed
+				console.warn("Transaction object missing signAndSend method", tx)
 			}
 		},
 		onSuccess: (_, { proposalId }) => {
+			showSuccess("Vote submitted successfully!")
 			// Invalidate queries to refresh UI
 			void queryClient.invalidateQueries({
 				queryKey: ["governance", "proposals"],
 			})
-			void queryClient.invalidateQueries({ queryKey: ["governance", "voted"] })
+			void queryClient.invalidateQueries({
+				queryKey: ["governance", "voted"],
+			})
 			// Optimistically update the specific voted status
 			queryClient.setQueryData(
 				["governance", "voted", proposalId, address],
 				true,
 			)
-			showSuccess("Vote submitted successfully!")
 		},
 
 		onError: (error: unknown) => {
@@ -207,7 +218,7 @@ export function useGovernance() {
 					? "Please connect your wallet to vote"
 					: appError.code === ErrorCode.CONTRACT_NOT_DEPLOYED
 						? "Voting is not available on this network"
-						: "Vote failed. Please try again."
+						: "Vote failed. Already voted or voting closed."
 			showError(message)
 		},
 	})
@@ -215,8 +226,9 @@ export function useGovernance() {
 	return {
 		votingPower,
 		proposals,
-		vote: (proposalId: number, support: boolean) =>
-			vote({ proposalId, support }),
+		isLoadingProposals,
+		castVote: (proposalId: number, support: boolean) =>
+			castVote({ proposalId, support }),
 		isVoting,
 		hasVoted,
 	}
