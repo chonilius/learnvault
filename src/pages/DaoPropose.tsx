@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { useNavigate } from "react-router-dom"
 import { useWallet } from "../hooks/useWallet"
 import { useScholarshipTreasury } from "../util/scholarshipTreasury"
-import ReactMarkdown from "react-markdown"
 
 type ProposalType = "scholarship" | "parameter_change" | "new_course"
 
@@ -66,7 +66,7 @@ const DaoPropose: React.FC = () => {
 			}
 		}
 
-		checkBalance()
+		void checkBalance()
 	}, [address, isConnected, getGovernanceTokenBalance, getMinimumProposalTokens])
 
 	const handleInputChange = (
@@ -113,7 +113,7 @@ const DaoPropose: React.FC = () => {
 				: Math.floor(Math.random() * 1000) + 1
 			
 			// Redirect to proposal detail page
-			navigate(`/dao/proposals#proposal-${proposalId}`)
+			void navigate(`/dao/proposals#proposal-${proposalId}`)
 		} catch (error) {
 			console.error("Failed to submit proposal:", error)
 			// In a real implementation, you would show an error message to the user

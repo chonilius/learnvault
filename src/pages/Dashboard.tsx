@@ -1,9 +1,9 @@
 import React, { useContext, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { WalletContext } from "../providers/WalletProvider"
-import LRNBalanceWidget from "../components/LRNBalanceWidget"
-import CourseCard from "../components/CourseCard"
 import ActivityFeed from "../components/ActivityFeed"
+import CourseCard from "../components/CourseCard"
+import LRNBalanceWidget from "../components/LRNBalanceWidget"
+import { WalletContext } from "../providers/WalletProvider"
 
 const shortenAddress = (addr: string) => {
     if (!addr) return ""
@@ -23,11 +23,11 @@ const Dashboard: React.FC = () => {
 
         const walletId = localStorage.getItem("walletId")
         if (!walletId) {
-            navigate("/")
+            void navigate("/")
         } else {
             const timer = setTimeout(() => {
                 setIsInitializing(false)
-                navigate("/")
+                void navigate("/")
             }, 1000)
             return () => clearTimeout(timer)
         }

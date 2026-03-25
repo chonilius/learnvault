@@ -1,7 +1,7 @@
 import { Card } from "@stellar/design-system"
+import { type ReactNode } from "react"
 import { useWallet } from "../hooks/useWallet"
 import ConnectAccount from "./ConnectAccount"
-import { type ReactNode } from "react"
 
 // If wallet is not connected, show a prompt instead of the page content
 const ConnectWalletGuard = ({ children }: { children: ReactNode }) => {
