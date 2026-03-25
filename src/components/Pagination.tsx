@@ -36,12 +36,10 @@ const Pagination: React.FC<PaginationProps> = ({
 
 	return (
 		<div className="flex items-center justify-between mt-8 px-2">
-			{/* Left: Page info (like in Leaderboard) */}
 			<span className="text-xs text-white/30 font-medium">
 				Page {page} of {totalPages}
 			</span>
 
-			{/* Center: Pagination buttons */}
 			<div className="flex items-center gap-3">
 				{/* Prev Button */}
 				<button
