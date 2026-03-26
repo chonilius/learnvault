@@ -1391,3 +1391,49 @@ fn full_flow_edge_case_exact_balance_disburse() {
     assert_eq!(client.get_balance(), 0);
     assert_eq!(client.get_total_disbursed(), 500);
 }
+
+#[cfg(test)]
+mod fuzz_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(100))]
+        
+        #[test]
+        #[ignore]
+        fn fuzz_deposit_amounts(amount in 1..i128::MAX) {
+            let env = Env::default();
+            let (client, _, donor, _, token_id, gov_client) = setup(&env);
+            env.mock_all_auths();
+            
+            client.deposit(&donor, &amount);
+            
+            assert_eq!(client.get_donor_total(&donor), amount);
+            assert_eq!(client.get_balance(), amount);
+            assert_eq!(token_client(&env, &token_id).balance(&client.address), amount);
+            assert_eq!(gov_client.balance(&donor), amount);
+        }
+
+        #[test]
+        #[ignore]
+        fn fuzz_vote_casting(proposal_id in any::<u32>()) {
+            let env = Env::default();
+            let (client, _, _donor, _, _, _) = setup(&env);
+            let voter = Address::generate(&env);
+            env.mock_all_auths();
+
+            // Most proposals don't exist, we test graceful error handling
+            let res = client.try_vote(&voter, &proposal_id, &true);
+            
+            if proposal_id != 1 {
+                assert_eq!(
+                    res.err(),
+                    Some(Ok(soroban_sdk::Error::from_contract_error(
+                        Error::ProposalNotFound as u32
+                    )))
+                );
+            }
+        }
+    }
+}
