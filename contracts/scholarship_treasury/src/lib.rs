@@ -515,6 +515,10 @@ impl ScholarshipTreasury {
             .get(&ADMIN_KEY)
             .unwrap_or_else(|| panic_with_error!(env, Error::NotInitialized))
     }
+
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
+    }
 }
 
 mod governance {

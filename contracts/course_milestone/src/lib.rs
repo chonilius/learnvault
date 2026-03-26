@@ -423,6 +423,10 @@ impl CourseMilestone {
         let learn_token_client = crate::LearnTokenClient::new(env, &learn_token_addr);
         learn_token_client.mint(&to, &amount);
     }
+
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
+    }
 }
 
 mod learn_token_client {

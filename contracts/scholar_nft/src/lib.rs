@@ -161,6 +161,10 @@ impl ScholarNFT {
             .has(&DataKey::ScholarToken(scholar))
     }
 
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
+    }
+
     // -- private helpers ----------------------------------------------------
 
     fn token_counter(env: &Env) -> u64 {
