@@ -1,13 +1,117 @@
 import React, { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useWallet } from "../hooks/useWallet"
+import {
+	generateLeaderboard,
+	filterByTime,
+	shortenAddr,
+	type LeaderboardEntry,
+} from "../util/mockLeaderboardData"
+import { formatLRN } from "../util/tokenFormat"
 
-interface LeaderboardEntry {
-	rank: number
-	address: string
-	fullAddress: string
-	balance: string
-	completedCourses: number
+const PAGE_SIZE = 25
+
+type TimeFilter = "all" | "month" | "week"
+
+const MEDAL: Record<number, { emoji: string; color: string; glow: string }> = {
+	1: { emoji: "🥇", color: "text-yellow-400", glow: "shadow-yellow-500/30" },
+	2: { emoji: "🥈", color: "text-slate-300", glow: "shadow-slate-400/30" },
+	3: { emoji: "🥉", color: "text-orange-400", glow: "shadow-orange-500/30" },
+}
+
+function avatarLetters(address: string): string {
+	return address.length >= 2
+		? `${address[0]}${address[address.length - 1]}`
+		: "??"
+}
+
+interface RowProps {
+	entry: LeaderboardEntry & { rank: number }
+	isMine: boolean
+	onClick: () => void
+	isMyRankBanner?: boolean
+}
+
+const LeaderboardRow: React.FC<RowProps> = ({
+	entry,
+	isMine,
+	onClick,
+	isMyRankBanner,
+}) => {
+	const medal = MEDAL[entry.rank]
+	const rowBg = isMine
+		? "bg-brand-cyan/10 border-brand-cyan/30"
+		: medal
+			? "bg-white/5 border-white/10"
+			: "bg-transparent border-white/5"
+
+	return (
+		<tr
+			onClick={onClick}
+			className={`
+				border-b ${rowBg} cursor-pointer transition-all duration-200
+				hover:bg-white/10 group
+				${isMyRankBanner ? "sticky bottom-0 z-20 backdrop-blur-xl" : ""}
+			`}
+		>
+			{/* Rank */}
+			<td className="px-4 py-4 whitespace-nowrap">
+				<div
+					className={`flex items-center gap-2 font-black text-lg ${medal ? medal.color : "text-white/40"}`}
+				>
+					{medal ? (
+						<span className="text-2xl">{medal.emoji}</span>
+					) : (
+						<span className="text-sm w-8 text-center">{entry.rank}</span>
+					)}
+				</div>
+			</td>
+
+			{/* Avatar + Address */}
+			<td className="px-4 py-4 whitespace-nowrap">
+				<div className="flex items-center gap-3">
+					<div
+						className={`
+						w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0
+						${medal ? `bg-gradient-to-br from-white/20 to-white/5 shadow-lg ${medal.glow}` : "bg-white/10"}
+						${isMine ? "bg-brand-cyan/20 text-brand-cyan" : ""}
+					`}
+					>
+						{avatarLetters(entry.address)}
+					</div>
+					<span className="font-mono text-sm text-white/70 group-hover:text-white transition-colors">
+						{shortenAddr(entry.address)}
+					</span>
+					{isMine && (
+						<span className="text-[10px] font-black uppercase tracking-widest text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded-full border border-brand-cyan/30">
+							You
+						</span>
+					)}
+				</div>
+			</td>
+
+			{/* LRN Balance */}
+			<td className="px-4 py-4 whitespace-nowrap text-right">
+				<span
+					className={`font-black text-sm ${medal ? medal.color : "text-white/80"}`}
+				>
+					{formatLRN(BigInt(entry.lrnBalance))} LRN
+				</span>
+			</td>
+
+			{/* Courses Completed */}
+			<td className="px-4 py-4 whitespace-nowrap text-center">
+				<span className="font-mono text-sm text-white/60">
+					{entry.coursesCompleted}
+				</span>
+			</td>
+
+			{/* Joined */}
+			<td className="px-4 py-4 whitespace-nowrap text-right text-xs text-white/40 font-medium">
+				{entry.joinedDate.toLocaleDateString()}
+			</td>
+		</tr>
+	)
 }
 
 const Leaderboard: React.FC = () => {
