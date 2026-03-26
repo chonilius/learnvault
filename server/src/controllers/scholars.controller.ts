@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express"
 
 import { pool } from "../db/index"
+import { stellarContractService } from "../services/stellar-contract.service"
 import { milestoneStore } from "../db/milestone-store"
 
 type ApiMilestoneStatus = "pending" | "verified" | "rejected"
@@ -144,5 +145,57 @@ export async function getScholarsLeaderboard(
 		})
 	} catch {
 		res.status(500).json({ error: "Failed to fetch scholars leaderboard" })
+	}
+}
+
+export async function getScholarProfile(
+	req: Request,
+	res: Response,
+): Promise<void> {
+	const { address } = req.params
+
+	if (!address) {
+		res.status(400).json({ error: "Scholar address is required" })
+		return
+	}
+
+	try {
+		// 1. Fetch on-chain data
+		const lrn_balance = await stellarContractService.getLearnTokenBalance(address)
+		const enrolled_courses = await stellarContractService.getEnrolledCourses(address)
+		const credentials = await stellarContractService.getScholarCredentials(address)
+
+		// 2. Fetch database data
+		const milestoneStatsResult = await pool.query(
+			`SELECT 
+				COUNT(*) FILTER (WHERE status = 'approved') AS completed,
+				COUNT(*) FILTER (WHERE status = 'pending') AS pending
+			 FROM milestone_reports
+			 WHERE scholar_address = $1`,
+			[address],
+		)
+		const stats = milestoneStatsResult.rows[0]
+
+		const joinedAtResult = await pool.query(
+			`SELECT MIN(enrolled_at) AS joined_at
+			 FROM enrollments
+			 WHERE learner_address = $1`,
+			[address],
+		)
+		// Fallback to current time if no enrollments yet
+		const joinedAt = joinedAtResult.rows[0]?.joined_at ?? new Date().toISOString()
+
+		res.status(200).json({
+			address,
+			lrn_balance,
+			enrolled_courses,
+			completed_milestones: Number(stats?.completed ?? 0),
+			pending_milestones: Number(stats?.pending ?? 0),
+			credentials,
+			joined_at: joinedAt,
+		})
+	} catch (error) {
+		console.error("[scholars] Error fetching scholar profile:", error)
+		res.status(500).json({ error: "Failed to fetch scholar profile" })
 	}
 }

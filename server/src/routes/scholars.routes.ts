@@ -2,10 +2,9 @@ import { Router } from "express"
 import { z } from "zod"
 
 import {
-	getScholarMilestones,
 	getScholarsLeaderboard,
+	getScholarProfile,
 } from "../controllers/scholars.controller"
-import { validate } from "../middleware/validation.middleware"
 
 export const scholarsRouter = Router()
 
@@ -77,4 +76,8 @@ scholarsRouter.get(
 )
 scholarsRouter.get("/scholars/leaderboard", (req, res) => {
 	void getScholarsLeaderboard(req, res)
+})
+
+scholarsRouter.get("/scholars/:address", (req, res) => {
+	void getScholarProfile(req, res)
 })
