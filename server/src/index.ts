@@ -17,6 +17,7 @@ import { createAuthRouter } from "./routes/auth.routes"
 import { commentsRouter } from "./routes/comments.routes"
 import { coursesRouter } from "./routes/courses.routes"
 import { credentialsRouter } from "./routes/credentials.routes"
+import { enrollmentsRouter } from "./routes/enrollments.routes"
 import { eventsRouter } from "./routes/events.routes"
 import { healthRouter } from "./routes/health.routes"
 import { governanceRouter } from "./routes/governance.routes"
@@ -131,6 +132,7 @@ app.use("/api", governanceRouter)
 app.use("/api", scholarsRouter)
 app.use("/api", adminMilestonesRouter)
 app.use("/api", uploadRouter)
+app.use("/api", enrollmentsRouter)
 app.use("/api", scholarshipsRouter)
 
 // Start event poller (non-prod only for now)
