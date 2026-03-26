@@ -11,10 +11,23 @@ const STELLAR_SECRET_KEY = process.env.STELLAR_SECRET_KEY ?? ""
 const COURSE_MILESTONE_CONTRACT_ID =
 	process.env.COURSE_MILESTONE_CONTRACT_ID ?? ""
 const SCHOLAR_NFT_CONTRACT_ID = process.env.SCHOLAR_NFT_CONTRACT_ID ?? ""
+const SCHOLARSHIP_TREASURY_CONTRACT_ID =
+	process.env.SCHOLARSHIP_TREASURY_CONTRACT_ID ?? ""
 
 export interface ContractCallResult {
 	txHash: string | null
 	simulated: boolean
+}
+
+export interface ScholarshipProposalParams {
+	applicant: string
+	amount: number
+	programName: string
+	programUrl: string
+	programDescription: string
+	startDate: string
+	milestoneTitles: string[]
+	milestoneDates: string[]
 }
 
 // --- Admin Validation Cache ---
@@ -279,8 +292,83 @@ async function callMintScholarNFT(
 	}
 }
 
+async function submitScholarshipProposal(
+	params: ScholarshipProposalParams,
+): Promise<ContractCallResult & { proposalId: string | null }> {
+	if (!STELLAR_SECRET_KEY || !SCHOLARSHIP_TREASURY_CONTRACT_ID) {
+		console.warn(
+			"[stellar] STELLAR_SECRET_KEY or SCHOLARSHIP_TREASURY_CONTRACT_ID not set — simulating proposal submission",
+		)
+		return {
+			txHash: `sim_prop_${Date.now()}`,
+			proposalId: `${Math.floor(Math.random() * 1000)}`,
+			simulated: true,
+		}
+	}
+
+	try {
+		const {
+			Keypair,
+			Contract,
+			TransactionBuilder,
+			Networks,
+			BASE_FEE,
+			rpc,
+			nativeToScVal,
+		} = await import("@stellar/stellar-sdk")
+
+		const server = new rpc.Server(
+			STELLAR_NETWORK === "mainnet"
+				? "https://soroban-rpc.stellar.org"
+				: "https://soroban-testnet.stellar.org",
+		)
+
+		const keypair = Keypair.fromSecret(STELLAR_SECRET_KEY)
+		const account = await server.getAccount(keypair.publicKey())
+		const contract = new Contract(SCHOLARSHIP_TREASURY_CONTRACT_ID)
+
+		const tx = new TransactionBuilder(account, {
+			fee: BASE_FEE,
+			networkPassphrase:
+				STELLAR_NETWORK === "mainnet" ? Networks.PUBLIC : Networks.TESTNET,
+		})
+			.addOperation(
+				contract.call(
+					"submit_proposal",
+					nativeToScVal(params.applicant, { type: "address" }),
+					nativeToScVal(params.amount, { type: "i128" }),
+					nativeToScVal(params.programName),
+					nativeToScVal(params.programUrl),
+					nativeToScVal(params.programDescription),
+					nativeToScVal(params.startDate),
+					nativeToScVal(params.milestoneTitles),
+					nativeToScVal(params.milestoneDates),
+				),
+			)
+			.setTimeout(30)
+			.build()
+
+		const prepared = await server.prepareTransaction(tx)
+		prepared.sign(keypair)
+
+		const result = await server.sendTransaction(prepared)
+
+		// We might need to wait for the transaction to be included in a ledger to get the result (proposal ID)
+		// but for now we return the hash.
+		return { txHash: result.hash, proposalId: null, simulated: false }
+	} catch (err) {
+		console.error("[stellar] Scholarship proposal submission failed:", err)
+		throw new Error(
+			"Scholarship proposal submission failed: " +
+				(err instanceof Error ? err.message : String(err)),
+		)
+	}
+}
+
 export const stellarContractService = {
 	callVerifyMilestone,
 	emitRejectionEvent,
 	callMintScholarNFT,
+	submitScholarshipProposal,
 }
+
