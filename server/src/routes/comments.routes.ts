@@ -23,10 +23,12 @@ export const commentsRouter = Router()
  */
 commentsRouter.get("/proposals/:proposalId/comments", async (req, res) => {
 	const { proposalId } = req.params
+	const limit = Math.min(parseInt(req.query.limit as string) || 50, 100)
+	const offset = Math.max(parseInt(req.query.offset as string) || 0, 0)
 	try {
 		const result = await pool.query(
-			`SELECT * FROM comments WHERE proposal_id = $1 AND deleted_at IS NULL ORDER BY is_pinned DESC, created_at ASC`,
-			[proposalId],
+			`SELECT * FROM comments WHERE proposal_id = $1 AND deleted_at IS NULL ORDER BY is_pinned DESC, created_at ASC LIMIT $2 OFFSET $3`,
+			[proposalId, limit, offset],
 		)
 		res.json(result.rows)
 	} catch (err) {
@@ -251,7 +253,7 @@ commentsRouter.put(
 			// I'll need a way to verify this.
 
 			const commentRes = await pool.query(
-				`SELECT proposal_id FROM comments WHERE id = $1`,
+				`SELECT proposal_id FROM comments WHERE id = $1 AND deleted_at IS NULL`,
 				[id],
 			)
 			if (commentRes.rowCount === 0)
@@ -259,10 +261,21 @@ commentsRouter.put(
 
 			const proposalId = commentRes.rows[0].proposal_id
 
-			// We'll need a proposals table or a way to store authors.
-			// Let's assume there's a simple mapping or we just check if the address matches the "proposal_author"
+			// Verify caller is the author of the proposal
+			const proposalRes = await pool.query(
+				`SELECT author_address FROM proposals WHERE id = $1`,
+				[proposalId],
+			)
+			if (!proposalRes.rowCount || proposalRes.rowCount === 0) {
+				return res.status(404).json({ error: "Proposal not found" })
+			}
+			if (proposalRes.rows[0].author_address !== authorAddress) {
+				return res
+					.status(403)
+					.json({ error: "Only the proposal author can pin comments" })
+			}
 
-			// UPDATE: Reset pins for this proposal and pin this one
+			// Reset pins for this proposal and pin this one
 			await pool.query(
 				`UPDATE comments SET is_pinned = FALSE WHERE proposal_id = $1`,
 				[proposalId],
