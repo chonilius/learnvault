@@ -5,7 +5,7 @@ import { createElement, type ReactElement, type ReactNode } from "react"
 import { afterEach, vi } from "vitest"
 
 // Import our custom mocks
-import { mockContractImports } from "./mocks/contracts"
+import { mockContracts } from "./mocks/contracts"
 import { mockStellarWalletsKit, mockWalletUtils } from "./mocks/wallet"
 
 // ---------------------------------------------------------------------------
@@ -18,6 +18,22 @@ vi.mock("@creit.tech/stellar-wallets-kit", () => mockStellarWalletsKit)
 // Mock wallet utility functions
 vi.mock("../util/wallet", () => mockWalletUtils)
 
+// Mock contract client imports
+vi.mock("../contracts/learn_token", () => ({
+	default: mockContracts.learnToken,
+}))
+
+vi.mock("../contracts/governance_token", () => ({
+	default: mockContracts.governanceToken,
+}))
+
+vi.mock("../contracts/scholarship_treasury", () => ({
+	default: mockContracts.scholarshipTreasury,
+}))
+
+vi.mock("../contracts/guess_the_number", () => ({
+	default: mockContracts.guessTheNumber,
+}))
 // Mock contract client dynamic imports
 vi.mock(
 	"../contracts/learn_token",
