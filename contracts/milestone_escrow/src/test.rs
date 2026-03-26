@@ -262,3 +262,76 @@ fn overpayment_is_rejected() {
         )))
     );
 }
+
+// --- fuzz tests ---
+
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    #[ignore]
+    fn fuzz_ledger_timestamps_30_day_timeout(
+        last_active_offset in 0..10_000_000_u64,
+        check_time_offset in 0..10_000_000_u64
+    ) {
+        let (env, contract_id, _, _, _, scholar) = setup();
+        let client = MilestoneEscrowClient::new(&env, &contract_id);
+        
+        let start_time = START_TS + last_active_offset;
+        set_timestamp(&env, start_time);
+        
+        create_escrow(&client, 99, &scholar, 1000, 2);
+        
+        // Advance time 
+        let current_time = start_time + check_time_offset;
+        set_timestamp(&env, current_time);
+        
+        let result = reclaim_inactive_authorized(&client, 99);
+        
+        if check_time_offset >= THIRTY_DAYS {
+            assert!(result.is_ok());
+        } else {
+            assert_eq!(
+                result.err(),
+                Some(Ok(soroban_sdk::Error::from_contract_error(
+                    crate::Error::InactivityNotReached as u32
+                )))
+            );
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn fuzz_tranche_disbursement_amounts(
+        amount in 1..100_000_000_i128,
+        tranches in 1..100_u32
+    ) {
+        let (env, contract_id, _, _, _, scholar) = setup();
+        let client = MilestoneEscrowClient::new(&env, &contract_id);
+        
+        if amount / (tranches as i128) == 0 {
+            return Ok(());
+        }
+
+        create_escrow(&client, 100, &scholar, amount, tranches);
+        
+        for _ in 0..tranches {
+            let res = release_tranche_authorized(&client, 100);
+            if res.is_err() {
+                break;
+            }
+        }
+        
+        let escrow = client.get_escrow(&100).unwrap();
+        assert!(escrow.released_amount <= escrow.total_amount);
+        
+        // Try one more, should fail with AllTranchesReleased
+        let over_release = release_tranche_authorized(&client, 100);
+        assert_eq!(
+            over_release.err(),
+            Some(Ok(soroban_sdk::Error::from_contract_error(
+                crate::Error::AllTranchesReleased as u32
+            )))
+        );
+    }
+}

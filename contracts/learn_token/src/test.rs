@@ -157,3 +157,38 @@ fn total_supply_starts_at_zero() {
     let (_, _, client) = setup(&e);
     assert_eq!(client.total_supply(), 0);
 }
+
+// --- fuzz tests ---
+
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    #[ignore]
+    fn fuzz_mint(amount in any::<u128>()) {
+        let e = Env::default();
+        let (_, _, client) = setup(&e);
+        let learner = Address::generate(&e);
+        
+        // The contract expects i128. Let's safely cast u128 to i128 or trap.
+        // If it's outside i128 max, it might cast to a negative number or we can just cap it / wrap it.
+        let amount_i128 = amount as i128;
+        
+        let result = client.try_mint(&learner, &amount_i128);
+        
+        if amount_i128 <= 0 {
+            // Must return ZeroAmount error
+            assert_eq!(
+                result.err(),
+                Some(Ok(soroban_sdk::Error::from_contract_error(
+                    crate::LRNError::ZeroAmount as u32
+                )))
+            );
+        } else {
+            // Valid mint amount, should succeed
+            assert!(result.is_ok());
+            assert_eq!(client.balance(&learner), amount_i128);
+            assert_eq!(client.total_supply(), amount_i128);
+        }
+    }
+}

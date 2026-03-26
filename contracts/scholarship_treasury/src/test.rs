@@ -1391,3 +1391,64 @@ fn full_flow_edge_case_exact_balance_disburse() {
     assert_eq!(client.get_balance(), 0);
     assert_eq!(client.get_total_disbursed(), 500);
 }
+
+// --- fuzz tests ---
+
+use proptest::prelude::*;
+
+proptest! {
+    #[test]
+    #[ignore]
+    fn fuzz_deposit_allocates_gov_tokens_monotonically(amount1 in 1..100_000_000_i128, amount2 in 1..100_000_000_i128) {
+        let env = Env::default();
+        let (client, _, donor, _, token_id, gov_client) = setup(&env);
+        let sac = StellarAssetClient::new(&env, &token_id);
+        
+        // Mint enough USDC token to the donor
+        sac.mint(&donor, &(amount1 + amount2));
+
+        env.mock_all_auths();
+        client.deposit(&donor, &amount1);
+        let gov_bal1 = gov_client.balance(&donor);
+        
+        client.deposit(&donor, &amount2);
+        let gov_bal2 = gov_client.balance(&donor);
+
+        // Monotonically correct formula check
+        assert!(gov_bal2 > gov_bal1);
+        assert_eq!(gov_bal1, amount1);
+        assert_eq!(gov_bal2, amount1 + amount2);
+    }
+
+    #[test]
+    #[ignore]
+    fn fuzz_vote_casting_random_proposal_ids(proposal_id in any::<u32>()) {
+        let env = Env::default();
+        let (client, _, donor, _, _, gov_client) = setup(&env);
+        let (milestone_titles, milestone_dates) = sample_milestones(&env);
+        
+        let voter = Address::generate(&env);
+        gov_client.mint(&voter, &500);
+
+        env.mock_all_auths();
+        
+        // create one valid proposal
+        client.submit_proposal(
+            &donor, &500, &String::from_str(&env, "Test"), &String::from_str(&env, "URL"), &String::from_str(&env, "Desc"), &String::from_str(&env, "Date"), &milestone_titles, &milestone_dates,
+        );
+
+        let result = client.try_vote(&voter, &proposal_id, &true);
+        
+        if proposal_id == 1 {
+            assert!(result.is_ok());
+        } else {
+            // "verify no panics" (meaning no unexpected panics, contract error ProposalNotFound expected)
+            assert_eq!(
+                result.err(),
+                Some(Ok(soroban_sdk::Error::from_contract_error(
+                    crate::Error::ProposalNotFound as u32
+                )))
+            );
+        }
+    }
+}
