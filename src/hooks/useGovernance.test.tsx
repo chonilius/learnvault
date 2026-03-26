@@ -64,6 +64,11 @@ function createWrapper(address?: string) {
 
 	return function Wrapper({ children }: { children: ReactNode }) {
 		return createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			createElement(
+				ToastProvider,
+				null,
 			ToastProvider,
 			null,
 			createElement(
