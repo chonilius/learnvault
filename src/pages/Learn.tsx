@@ -50,5 +50,3 @@ export default function Learn() {
 		</div>
 	)
 }
-
-export default Learn

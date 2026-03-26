@@ -8,10 +8,10 @@ import {
 import { useEffect, useState } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
 import { networkPassphrase, rpcUrl, stellarNetwork } from "../contracts/util"
-import { useContractIds } from "./useContractIds"
-import { rpcUrl } from "../contracts/util"
+
 import { ErrorCode, createAppError } from "../types/errors"
 import { parseError } from "../utils/errors"
+import { useContractIds } from "./useContractIds"
 import { useWallet } from "./useWallet"
 
 export interface DonorContribution {
@@ -470,7 +470,8 @@ const parseVoteEvents = (events: RpcEvent[]): Vote[] => {
 				"2": "Proposal #2",
 				"3": "Proposal #3",
 			}
-			const proposalTitle = proposalTitles[proposalId] ?? `Proposal #${proposalId}`
+			const proposalTitle =
+				proposalTitles[proposalId] ?? `Proposal #${proposalId}`
 
 			return {
 				proposalId,
@@ -533,7 +534,8 @@ const parseScholarEvents = (events: RpcEvent[]): Scholar[] => {
 
 			// Only add if we have meaningful data
 			if (scholarId || proposalAmount > 0) {
-				const id = scholarId || `scholar-${Math.random().toString(36).substring(7)}`
+				const id =
+					scholarId || `scholar-${Math.random().toString(36).substring(7)}`
 				const existing = scholarMap.get(id)
 
 				if (existing) {
@@ -542,7 +544,10 @@ const parseScholarEvents = (events: RpcEvent[]): Scholar[] => {
 						existing.progressPercentage,
 						progressPercentage,
 					)
-					existing.proposalAmount = Math.max(existing.proposalAmount, proposalAmount)
+					existing.proposalAmount = Math.max(
+						existing.proposalAmount,
+						proposalAmount,
+					)
 					existing.fundedPercentage = Math.min(
 						existing.fundedPercentage + (proposalAmount > 0 ? 25 : 0),
 						100,
@@ -885,13 +890,6 @@ export const useDonor = (): DonorData => {
 					error: null,
 					isEmpty,
 				})
-			} catch (_err) {
-				setData((prev) => ({
-					...prev,
-					error: appError.message,
-					isLoading: false,
-				}))
-				showError(userMessage)
 			}
 		}
 
