@@ -20,6 +20,9 @@ const SCHOLARSHIP_TREASURY_CONTRACT = readEnv(
 )
 const GOVERNANCE_TOKEN_CONTRACT = readEnv("PUBLIC_GOVERNANCE_TOKEN_CONTRACT")
 
+// The expected contract version this client was generated against.
+const EXPECTED_CONTRACT_VERSION = "1.0.0"
+
 /**
  * Hook to manage governance interactions: reading proposals, voting power, and casting votes.
  */
@@ -225,9 +228,67 @@ export function useGovernance() {
 		}
 	}, [])
 
+	// Version checks — warn if deployed contract versions don't match expected
+	useQuery({
+		queryKey: ["governance", "version", "governance_token"],
+		queryFn: async (): Promise<string | null> => {
+			if (!GOVERNANCE_TOKEN_CONTRACT) return null
+			const client = await loadClient("../contracts/governance_token")
+			if (!client) return null
+			const fn = asMethod(client, "get_version")
+			if (!fn) return null
+			try {
+				const raw = await fn({})
+				const version = String(
+					(raw !== null && typeof raw === "object" && "result" in (raw as ContractRecord)
+						? (raw as ContractRecord).result
+						: raw) ?? "",
+				)
+				if (version && version !== EXPECTED_CONTRACT_VERSION) {
+					console.warn(
+						`[GovernanceToken] Version mismatch: expected ${EXPECTED_CONTRACT_VERSION}, got ${version}. ` +
+							"Client bindings may be out of date.",
+					)
+				}
+				return version
+			} catch {
+				return null
+			}
+		},
+		staleTime: Infinity,
+	})
+
+	useQuery({
+		queryKey: ["governance", "version", "scholarship_treasury"],
+		queryFn: async (): Promise<string | null> => {
+			if (!SCHOLARSHIP_TREASURY_CONTRACT) return null
+			const client = await loadClient("../contracts/scholarship_treasury")
+			if (!client) return null
+			const fn = asMethod(client, "get_version")
+			if (!fn) return null
+			try {
+				const raw = await fn({})
+				const version = String(
+					(raw !== null && typeof raw === "object" && "result" in (raw as ContractRecord)
+						? (raw as ContractRecord).result
+						: raw) ?? "",
+				)
+				if (version && version !== EXPECTED_CONTRACT_VERSION) {
+					console.warn(
+						`[ScholarshipTreasury] Version mismatch: expected ${EXPECTED_CONTRACT_VERSION}, got ${version}. ` +
+							"Client bindings may be out of date.",
+					)
+				}
+				return version
+			} catch {
+				return null
+			}
+		},
+		staleTime: Infinity,
+	})
+
 	// Fetch voting power (GOV token balance)
-	const { data: votingPower = 0n } = useQuery({
-		queryKey: ["governance", "votingPower", address],
+	const { data: votingPower = 0n } = useQuery({		queryKey: ["governance", "votingPower", address],
 		queryFn: async () => {
 			if (!address || !GOVERNANCE_TOKEN_CONTRACT) return 0n
 			const client = await loadClient("../contracts/governance_token")

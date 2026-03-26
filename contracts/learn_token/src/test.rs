@@ -38,9 +38,11 @@ proptest! {
         let balance = token_client.balance(&user);
         assert_eq!(balance, safe_amount);
     }
+} // close proptest!
+
 extern crate std;
 
-use soroban_sdk::{Address, Env, IntoVal, testutils::{Address as _, Events as _}};
+use soroban_sdk::{IntoVal, testutils::{Address as _, Events as _}};
 
 use crate::{LRNError, LearnToken, LearnTokenClient};
 
@@ -194,4 +196,12 @@ fn total_supply_starts_at_zero() {
     let e = Env::default();
     let (_, _, client) = setup(&e);
     assert_eq!(client.total_supply(), 0);
+}
+
+#[test]
+fn get_version_returns_semver() {
+    let e = Env::default();
+    let (_, _, client) = setup(&e);
+    let version = client.get_version();
+    assert_eq!(version, soroban_sdk::String::from_str(&e, "1.0.0"));
 }

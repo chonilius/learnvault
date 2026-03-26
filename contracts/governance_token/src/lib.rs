@@ -694,6 +694,16 @@ mod test {
     }
 
     #[test]
+    fn get_version_returns_semver() {
+        let e = Env::default();
+        let (_, _, client) = setup(&e);
+        assert_eq!(
+            client.get_version(),
+            String::from_str(&e, "1.0.0")
+        );
+    }
+
+    #[test]
     fn multiple_mints_to_different_accounts() {
         let e = Env::default();
         let (_, _, client) = setup(&e);
