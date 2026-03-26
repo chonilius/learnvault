@@ -7,6 +7,7 @@ import CourseCard from "./components/CourseCard"
 import ErrorBoundary from "./components/ErrorBoundary"
 import Footer from "./components/Footer"
 import NavBar from "./components/NavBar"
+import { NetworkBanner } from "./components/NetworkBanner"
 import { ToastProvider } from "./components/Toast/ToastProvider"
 import { WalletToastWatcher } from "./components/WalletToastWatcher"
 import { labPrefix } from "./contracts/util"
@@ -66,6 +67,7 @@ function App() {
 
 const AppLayout: React.FC = () => (
 	<div className="min-h-screen flex flex-col pt-24 overflow-x-hidden w-full max-w-full">
+		<NetworkBanner />
 		<NavBar />
 		<main className="flex-1 relative z-10">
 			<Outlet />
