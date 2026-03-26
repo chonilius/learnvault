@@ -1,8 +1,8 @@
 import { type Request, type Response } from "express"
 
 import { pool } from "../db/index"
-import { stellarContractService } from "../services/stellar-contract.service"
 import { milestoneStore } from "../db/milestone-store"
+import { stellarContractService } from "../services/stellar-contract.service"
 
 type ApiMilestoneStatus = "pending" | "verified" | "rejected"
 type InternalMilestoneStatus = "pending" | "approved" | "rejected"

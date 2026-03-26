@@ -456,7 +456,7 @@ async function getLearnTokenBalance(address: string): Promise<string> {
 	}
 }
 
-async function getEnrolledCourses(address: string): Promise<string[]> {
+async function getEnrolledCourses(_address: string): Promise<string[]> {
 	if (!COURSE_MILESTONE_CONTRACT_ID) {
 		console.warn("[stellar] COURSE_MILESTONE_CONTRACT_ID not set — simulating enrollments")
 		return ["stellar-basics", "defi-101"]
@@ -464,7 +464,7 @@ async function getEnrolledCourses(address: string): Promise<string[]> {
 	return ["stellar-basics", "defi-101"]
 }
 
-async function getScholarCredentials(address: string): Promise<any[]> {
+async function getScholarCredentials(_address: string): Promise<any[]> {
 	if (!SCHOLAR_NFT_CONTRACT_ID) {
 		console.warn("[stellar] SCHOLAR_NFT_CONTRACT_ID not set — simulating credentials")
 		return [{ token_id: 1, course_id: "stellar-basics", issued_at: new Date().toISOString() }]

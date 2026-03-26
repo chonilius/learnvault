@@ -1,5 +1,5 @@
+import express, { type Express } from "express"
 import request from "supertest"
-import { Express } from "express"
 
 // Mock internal modules
 jest.mock("../db/index", () => ({
@@ -17,12 +17,11 @@ jest.mock("../services/stellar-contract.service", () => ({
 }))
 
 import { pool } from "../db/index"
+import { scholarsRouter } from "../routes/scholars.routes"
+
 const mockedQuery = pool.query as jest.Mock
 
 // We need a helper to build the app with mocked dependencies
-import { scholarsRouter } from "../routes/scholars.routes"
-import express from "express"
-
 const buildApp = (): Express => {
 	const app = express()
 	app.use(express.json())
@@ -65,6 +64,6 @@ describe("GET /api/scholars/:address", () => {
 		// Express usually handles this via routing, but if we call without address:
 		// Note: /api/scholars/ without address might 404 due to route not matching
 		const res = await request(buildApp()).get("/api/scholars/")
-		expect(res.status).toBe(404) 
+		expect(res.status).toBe(404)
 	})
 })

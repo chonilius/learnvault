@@ -158,7 +158,7 @@ const Leaderboard: React.FC = () => {
 			}
 		}
 
-		fetchLeaderboard()
+		void fetchLeaderboard()
 	}, [])
 
 	const leaderboardRows = useMemo(
