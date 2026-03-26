@@ -189,3 +189,16 @@ export const createCommentBodySchema = z
 			})
 		}
 	})
+
+export const createCredentialMetadataBodySchema = z
+	.object({
+		course_id: requiredString("course_id"),
+		learner_address: requiredString("learner_address"),
+		completed_at: z
+			.string({
+				required_error: "completed_at is required",
+				invalid_type_error: "completed_at must be a string",
+			})
+			.datetime({ message: "completed_at must be a valid ISO 8601 datetime" }),
+	})
+	.strict()
