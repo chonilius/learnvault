@@ -2,7 +2,7 @@ import { Router } from "express"
 
 import {
 	createCourse,
-	getCourseBySlug,
+	getCourse,
 	getCourseLessonById,
 	getCourses,
 	updateCourse,
@@ -12,7 +12,7 @@ import { requireCourseAdmin } from "../middleware/course-admin.middleware"
 export const coursesRouter = Router()
 
 coursesRouter.get("/courses", getCourses)
-coursesRouter.get("/courses/:slug", getCourseBySlug)
-coursesRouter.get("/courses/:slug/lessons/:id", getCourseLessonById)
+coursesRouter.get("/courses/:idOrSlug", getCourse)
+coursesRouter.get("/courses/:idOrSlug/lessons/:id", getCourseLessonById)
 coursesRouter.post("/courses", requireCourseAdmin, createCourse)
-coursesRouter.put("/courses/:id", requireCourseAdmin, updateCourse)
+coursesRouter.patch("/courses/:id", requireCourseAdmin, updateCourse)
