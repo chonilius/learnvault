@@ -357,24 +357,6 @@ async function isEnrolled(
 				: "https://soroban-testnet.stellar.org",
 		)
 
-		// Get a dummy account for simulation
-		const dummyKeypair = Keypair.random()
-		const dummyAccount = await server.getAccount(dummyKeypair.publicKey())
-
-		const contract = new Contract(COURSE_MILESTONE_CONTRACT_ID)
-
-		// Create address from learner address
-		const learnerScVal = xdr.ScVal.scvAddress(
-			new Address(learnerAddress).toScVal() as any,
-		)
-
-		const tx = new TransactionBuilder(dummyAccount, {
-			fee: "100",
-			networkPassphrase:
-				STELLAR_NETWORK === "mainnet" ? Networks.PUBLIC : Networks.TESTNET,
-		})
-			.addOperation(
-				contract.call("is_enrolled", learnerScVal, xdr.ScVal.scvU32(courseId)),
 		const contract = new Contract(COURSE_MILESTONE_CONTRACT_ID)
 		const mockAccount = new Address(learnerAddress)
 
