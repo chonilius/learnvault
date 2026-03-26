@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(deprecated)]
 
 //! # LearnToken (LRN)
 //!
@@ -168,6 +169,10 @@ impl LearnToken {
             .instance()
             .get(&SYMBOL_KEY)
             .unwrap_or_else(|| String::from_str(&env, "LRN"))
+    }
+
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
     }
 
     /// Calculate reputation score based on balance.

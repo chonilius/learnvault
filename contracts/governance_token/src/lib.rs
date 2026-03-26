@@ -286,6 +286,10 @@ impl GovernanceToken {
             .unwrap_or_else(|| String::from_str(&env, "GOV"))
     }
 
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
+    }
+
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
@@ -687,6 +691,13 @@ mod test {
         let e = Env::default();
         let (_, _, client) = setup(&e);
         assert_eq!(client.total_supply(), 0);
+    }
+
+    #[test]
+    fn get_version_returns_semver() {
+        let e = Env::default();
+        let (_, _, client) = setup(&e);
+        assert_eq!(client.get_version(), String::from_str(&e, "1.0.0"));
     }
 
     #[test]

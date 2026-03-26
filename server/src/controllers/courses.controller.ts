@@ -71,17 +71,32 @@ export const getCourses = async (
 			typeof req.query.page === "string"
 				? Number.parseInt(req.query.page, 10)
 				: 1
+
 		const limitParam =
 			typeof req.query.limit === "string"
 				? Number.parseInt(req.query.limit, 10)
 				: 12
 
-		const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1
+		const offsetParam =
+			typeof req.query.offset === "string"
+				? Number.parseInt(req.query.offset, 10)
+				: undefined
+
 		const limit =
 			Number.isFinite(limitParam) && limitParam > 0
 				? Math.min(limitParam, 50)
 				: 12
-		const offset = (page - 1) * limit
+
+		let offset = 0
+		let page = 1
+
+		if (offsetParam !== undefined && Number.isFinite(offsetParam) && offsetParam >= 0) {
+			offset = offsetParam
+			page = Math.floor(offset / limit) + 1
+		} else {
+			page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1
+			offset = (page - 1) * limit
+		}
 
 		const conditions: string[] = ["published_at IS NOT NULL"]
 		const params: unknown[] = []
@@ -138,19 +153,27 @@ export const getCourses = async (
 	}
 }
 
-export const getCourseBySlug = async (
+export const getCourse = async (
 	req: Request,
 	res: Response,
 ): Promise<void> => {
 	try {
-		const slug = req.params.slug
-		const courseResult = (await pool.query(
-			`SELECT id, slug, title, description, cover_image_url, track, difficulty, published_at, created_at, updated_at
-			 FROM courses
-			 WHERE slug = $1 AND published_at IS NOT NULL
-			 LIMIT 1`,
-			[slug],
-		)) as { rows: CourseRow[] }
+		const idOrSlug = req.params.idOrSlug
+		const isNumericId = /^\d+$/.test(idOrSlug)
+
+		const query = isNumericId
+			? `SELECT id, slug, title, description, cover_image_url, track, difficulty, published_at, created_at, updated_at
+			   FROM courses
+			   WHERE id = $1 AND published_at IS NOT NULL
+			   LIMIT 1`
+			: `SELECT id, slug, title, description, cover_image_url, track, difficulty, published_at, created_at, updated_at
+			   FROM courses
+			   WHERE slug = $1 AND published_at IS NOT NULL
+			   LIMIT 1`
+
+		const courseResult = (await pool.query(query, [
+			isNumericId ? Number.parseInt(idOrSlug, 10) : idOrSlug,
+		])) as { rows: CourseRow[] }
 
 		const course = courseResult.rows[0]
 		if (!course) {
@@ -207,6 +230,9 @@ export const getCourseLessonById = async (
 			return
 		}
 
+		const idOrSlug = req.params.idOrSlug
+		const isNumericId = /^\d+$/.test(idOrSlug)
+
 		const result = (await pool.query(
 			`SELECT
 				l.id,
@@ -231,12 +257,12 @@ export const getCourseLessonById = async (
 			 INNER JOIN courses c ON c.id = l.course_id
 			 LEFT JOIN quizzes q ON q.lesson_id = l.id
 			 LEFT JOIN quiz_questions qq ON qq.quiz_id = q.id
-			 WHERE c.slug = $1
+			 WHERE ${isNumericId ? "c.id" : "c.slug"} = $1
 			   AND c.published_at IS NOT NULL
 			   AND l.id = $2
 			 GROUP BY l.id
 			 LIMIT 1`,
-			[req.params.slug, lessonId],
+			[isNumericId ? Number.parseInt(idOrSlug, 10) : idOrSlug, lessonId],
 		)) as { rows: LessonRow[] }
 
 		const lesson = result.rows[0]

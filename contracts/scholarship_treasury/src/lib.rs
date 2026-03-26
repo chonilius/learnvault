@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(clippy::too_many_arguments)]
 
 use soroban_sdk::{
     Address, Env, String, Symbol, Vec, contract, contracterror, contractevent, contractimpl,
@@ -162,7 +163,7 @@ impl ScholarshipTreasury {
         donor.require_auth();
 
         let usdc = token::client(&env);
-        usdc.transfer(&donor, &env.current_contract_address(), &amount);
+        usdc.transfer(&donor, env.current_contract_address(), &amount);
 
         let gov_contract = Self::governance_contract(&env);
         let gov_client = governance::client(&env, &gov_contract);
@@ -515,6 +516,10 @@ impl ScholarshipTreasury {
             .get(&ADMIN_KEY)
             .unwrap_or_else(|| panic_with_error!(env, Error::NotInitialized))
     }
+
+    pub fn get_version(env: Env) -> String {
+        String::from_str(&env, "1.0.0")
+    }
 }
 
 mod governance {
@@ -525,6 +530,7 @@ mod governance {
     }
 
     #[soroban_sdk::contractclient(name = "GovernanceTokenClient")]
+    #[allow(dead_code)]
     pub trait GovernanceTokenInterface {
         fn mint(env: Env, to: Address, amount: i128);
         fn balance(env: Env, account: Address) -> i128;

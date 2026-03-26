@@ -92,6 +92,19 @@ describe("GET /api/courses", () => {
 		expect(res.body.totalPages).toBe(3)
 	})
 
+	it("supports offset parameter", async () => {
+		mockedQuery
+			.mockResolvedValueOnce({ rows: [{ count: "100" }] })
+			.mockResolvedValueOnce({
+				rows: [],
+			})
+
+		const res = await request(buildApp()).get("/api/courses?offset=10&limit=10")
+		expect(res.status).toBe(200)
+		expect(res.body.page).toBe(2)
+		expect(res.body.limit).toBe(10)
+	})
+
 	it("returns empty results for invalid difficulty", async () => {
 		const res = await request(buildApp()).get("/api/courses?difficulty=expert")
 		expect(res.status).toBe(200)
@@ -105,7 +118,7 @@ describe("GET /api/courses", () => {
 	})
 })
 
-describe("GET /api/courses/:slug", () => {
+describe("GET /api/courses/:idOrSlug", () => {
 	it("returns a course with nested lessons", async () => {
 		mockedQuery
 			.mockResolvedValueOnce({
@@ -153,7 +166,7 @@ describe("GET /api/courses/:slug", () => {
 	})
 })
 
-describe("GET /api/courses/:slug/lessons/:id", () => {
+describe("GET /api/courses/:idOrSlug/lessons/:id", () => {
 	it("returns lesson including quiz", async () => {
 		mockedQuery.mockResolvedValueOnce({
 			rows: [
@@ -260,7 +273,7 @@ describe("POST /api/courses", () => {
 	})
 })
 
-describe("PUT /api/courses/:id", () => {
+describe("PATCH /api/courses/:id", () => {
 	it("updates course fields", async () => {
 		mockedQuery
 			.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 1 }] })
@@ -282,7 +295,7 @@ describe("PUT /api/courses/:id", () => {
 			})
 
 		const res = await request(buildApp())
-			.put("/api/courses/1")
+			.patch("/api/courses/1")
 			.set("Authorization", `Bearer ${adminToken}`)
 			.send({ title: "Updated Title" })
 
@@ -293,14 +306,14 @@ describe("PUT /api/courses/:id", () => {
 	it("returns 404 when course does not exist", async () => {
 		mockedQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] })
 		const res = await request(buildApp())
-			.put("/api/courses/999")
+			.patch("/api/courses/999")
 			.set("Authorization", `Bearer ${adminToken}`)
 			.send({ title: "Nope" })
 		expect(res.status).toBe(404)
 	})
 
 	it("returns 401 without auth", async () => {
-		const res = await request(buildApp()).put("/api/courses/1").send({})
+		const res = await request(buildApp()).patch("/api/courses/1").send({})
 		expect(res.status).toBe(401)
 	})
 
@@ -310,7 +323,7 @@ describe("PUT /api/courses/:id", () => {
 			.mockRejectedValueOnce({ code: "23505" })
 
 		const res = await request(buildApp())
-			.put("/api/courses/1")
+			.patch("/api/courses/1")
 			.set("Authorization", `Bearer ${adminToken}`)
 			.send({ slug: "taken-slug" })
 		expect(res.status).toBe(409)
