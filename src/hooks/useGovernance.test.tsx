@@ -69,11 +69,6 @@ function createWrapper(address?: string) {
 			createElement(
 				ToastProvider,
 				null,
-			ToastProvider,
-			null,
-			createElement(
-				QueryClientProvider,
-				{ client: queryClient },
 				createElement(WalletContext.Provider, { value: walletCtx }, children),
 			),
 		)
