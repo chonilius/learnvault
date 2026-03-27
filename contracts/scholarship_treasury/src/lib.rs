@@ -27,8 +27,8 @@ pub enum DataKey {
     Proposal(u32),
     ApplicantProposals(Address),
     Scholar(Address),
-    VoteCast(u32, Address),       // (proposal_id, voter) -> bool
-    FinalizedProposal(u32),       // proposal_id -> ProposalStatus (set by finalize_proposal)
+    VoteCast(u32, Address), // (proposal_id, voter) -> bool
+    FinalizedProposal(u32), // proposal_id -> ProposalStatus (set by finalize_proposal)
 }
 
 #[derive(Clone)]
@@ -117,7 +117,7 @@ pub struct ProposalSubmitted {
 
 #[contractevent(topics = ["vote"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VoteCast {
+pub struct VoteCastEvent {
     #[topic]
     pub voter: Address,
     #[topic]
@@ -490,7 +490,7 @@ impl ScholarshipTreasury {
             .set(&DataKey::Proposal(proposal_id), &proposal);
 
         // 9. Emit event
-        VoteCast {
+        VoteCastEvent {
             voter,
             proposal_id,
             support,
@@ -535,7 +535,8 @@ impl ScholarshipTreasury {
 
         let total_votes = proposal.yes_votes + proposal.no_votes;
         let quorum_met = total_gov > 0
-            && total_votes.checked_mul(10_000)
+            && total_votes
+                .checked_mul(10_000)
                 .map(|tv| tv / total_gov >= MIN_QUORUM_BPS)
                 .unwrap_or(false);
 
