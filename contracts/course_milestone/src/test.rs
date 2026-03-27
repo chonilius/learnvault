@@ -91,17 +91,17 @@ fn duplicate_submission_is_rejected() {
 }
 
 #[test]
-fn get_milestone_status_returns_not_started_by_default() {
+fn get_milestone_state_returns_not_started_by_default() {
     let (env, _contract_id, _admin, client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
 
-    let status = client.get_milestone_status(&learner, &course_id, &1);
+    let status = client.get_milestone_state(&learner, &course_id, &1);
     assert_eq!(status, MilestoneStatus::NotStarted);
 }
 
 #[test]
-fn get_milestone_status_returns_pending_after_submission() {
+fn get_milestone_state_returns_pending_after_submission() {
     let (env, _contract_id, admin, client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
@@ -111,12 +111,12 @@ fn get_milestone_status_returns_pending_after_submission() {
     client.enroll(&learner, &course_id);
     client.submit_milestone(&learner, &course_id, &1, &evidence);
 
-    let status = client.get_milestone_status(&learner, &course_id, &1);
+    let status = client.get_milestone_state(&learner, &course_id, &1);
     assert_eq!(status, MilestoneStatus::Pending);
 }
 
 #[test]
-fn get_milestone_status_not_started_for_unsubmitted_milestone() {
+fn get_milestone_state_not_started_for_unsubmitted_milestone() {
     let (env, _contract_id, admin, client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
@@ -126,7 +126,7 @@ fn get_milestone_status_not_started_for_unsubmitted_milestone() {
     client.enroll(&learner, &course_id);
     client.submit_milestone(&learner, &course_id, &1, &evidence);
 
-    let status = client.get_milestone_status(&learner, &course_id, &2);
+    let status = client.get_milestone_state(&learner, &course_id, &2);
     assert_eq!(status, MilestoneStatus::NotStarted);
 }
 
@@ -265,6 +265,7 @@ fn pause_blocks_submission() {
     let course_id = sid(&env, "rust-101");
     let evidence = sid(&env, "ipfs://proof");
 
+    client.add_course(&admin, &course_id, &1);
     client.enroll(&learner, &course_id);
     client.pause(&admin);
 
@@ -284,6 +285,7 @@ fn unpause_restores_functionality() {
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
 
+    client.add_course(&admin, &course_id, &1);
     client.pause(&admin);
     client.unpause(&admin);
 
