@@ -256,12 +256,21 @@ commentsRouter.put(
 			)
 			if (commentRes.rowCount === 0)
 				return res.status(404).json({ error: "Comment not found" })
-
+			
 			const proposalId = commentRes.rows[0].proposal_id
 
-			// We'll need a proposals table or a way to store authors.
-			// Let's assume there's a simple mapping or we just check if the address matches the "proposal_author"
-
+			// Verify the requesting user is the proposal author
+			const proposalRes = await pool.query(
+				`SELECT author_address FROM proposals WHERE id = $1`,
+				[proposalId],
+			)
+			if (proposalRes.rowCount === 0)
+				return res.status(404).json({ error: "Proposal not found" })
+			
+			const proposalAuthor = proposalRes.rows[0].author_address
+			if (proposalAuthor.toLowerCase() !== authorAddress?.toLowerCase())
+				return res.status(403).json({ error: "Only the proposal author can pin comments" })
+			
 			// UPDATE: Reset pins for this proposal and pin this one
 			await pool.query(
 				`UPDATE comments SET is_pinned = FALSE WHERE proposal_id = $1`,
