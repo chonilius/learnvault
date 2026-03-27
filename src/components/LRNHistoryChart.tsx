@@ -95,7 +95,10 @@ const LRNHistoryChart: React.FC<LRNHistoryChartProps> = ({ address }) => {
 					data={chartData}
 					margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
 				>
-					<CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+					<CartesianGrid
+						strokeDasharray="3 3"
+						stroke="rgba(255,255,255,0.06)"
+					/>
 					<XAxis
 						dataKey="date"
 						tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}

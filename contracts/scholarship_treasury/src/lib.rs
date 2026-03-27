@@ -6,6 +6,16 @@ use soroban_sdk::{
     contracttype, panic_with_error, symbol_short,
 };
 
+// ---------------------------------------------------------------------------
+// Storage Constants (assuming ~6s ledger time)
+// ---------------------------------------------------------------------------
+
+const DAY_IN_LEDGERS: u32 = 17_280;
+const INSTANCE_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
+const INSTANCE_EXTEND_TO: u32 = DAY_IN_LEDGERS * 30; // 30 days
+const PERSISTENT_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
+const PERSISTENT_EXTEND_TO: u32 = DAY_IN_LEDGERS * 365; // 1 year
+
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
 const GOV_KEY: Symbol = symbol_short!("GOV");
 const USDC_KEY: Symbol = symbol_short!("USDC");
@@ -27,8 +37,8 @@ pub enum DataKey {
     Proposal(u32),
     ApplicantProposals(Address),
     Scholar(Address),
-    VoteCast(u32, Address),       // (proposal_id, voter) -> bool
-    FinalizedProposal(u32),       // proposal_id -> ProposalStatus (set by finalize_proposal)
+    VoteCast(u32, Address), // (proposal_id, voter) -> bool
+    FinalizedProposal(u32), // proposal_id -> ProposalStatus (set by finalize_proposal)
 }
 
 #[derive(Clone)]
@@ -117,7 +127,7 @@ pub struct ProposalSubmitted {
 
 #[contractevent(topics = ["vote"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VoteCast {
+pub struct VoteCastEvent {
     #[topic]
     pub voter: Address,
     #[topic]
@@ -143,6 +153,8 @@ impl ScholarshipTreasury {
         env.storage().instance().set(&SCHOLARS_KEY, &0_u32);
         env.storage().instance().set(&DONORS_KEY, &0_u32);
         env.storage().instance().set(&PAUSED_KEY, &false);
+        
+        Self::extend_instance(&env);
     }
 
     pub fn pause(env: Env) {
@@ -219,6 +231,8 @@ impl ScholarshipTreasury {
         env.storage()
             .persistent()
             .set(&donor_key, &(current + amount));
+        
+        Self::extend_persistent(&env, &donor_key);
 
         let total = env
             .storage()
@@ -272,6 +286,7 @@ impl ScholarshipTreasury {
                 .instance()
                 .set(&SCHOLARS_KEY, &(scholars_count + 1));
             env.storage().persistent().set(&scholar_key, &true);
+            Self::extend_persistent(&env, &scholar_key);
         }
 
         DisbursementRecorded { recipient, amount }.publish(&env);
@@ -370,6 +385,8 @@ impl ScholarshipTreasury {
         env.storage()
             .persistent()
             .set(&DataKey::Proposal(proposal_id), &proposal);
+        
+        Self::extend_persistent(&env, &DataKey::Proposal(proposal_id));
 
         let applicant_key = DataKey::ApplicantProposals(applicant.clone());
         let mut proposal_ids = env
@@ -381,6 +398,8 @@ impl ScholarshipTreasury {
         env.storage()
             .persistent()
             .set(&applicant_key, &proposal_ids);
+        
+        Self::extend_persistent(&env, &applicant_key);
         env.storage()
             .instance()
             .set(&NEXT_PROPOSAL_KEY, &(proposal_id + 1));
@@ -396,9 +415,14 @@ impl ScholarshipTreasury {
     }
 
     pub fn get_proposal(env: Env, proposal_id: u32) -> Option<Proposal> {
-        env.storage()
-            .persistent()
-            .get::<_, Proposal>(&DataKey::Proposal(proposal_id))
+        Self::extend_instance(&env);
+        let key = DataKey::Proposal(proposal_id);
+        if let Some(prop) = env.storage().persistent().get::<_, Proposal>(&key) {
+            Self::extend_persistent(&env, &key);
+            Some(prop)
+        } else {
+            None
+        }
     }
 
     pub fn get_proposals_by_applicant(env: Env, applicant: Address) -> Vec<u32> {
@@ -489,8 +513,11 @@ impl ScholarshipTreasury {
             .persistent()
             .set(&DataKey::Proposal(proposal_id), &proposal);
 
+        Self::extend_persistent(&env, &vote_key);
+        Self::extend_persistent(&env, &DataKey::Proposal(proposal_id));
+
         // 9. Emit event
-        VoteCast {
+        VoteCastEvent {
             voter,
             proposal_id,
             support,
@@ -535,7 +562,8 @@ impl ScholarshipTreasury {
 
         let total_votes = proposal.yes_votes + proposal.no_votes;
         let quorum_met = total_gov > 0
-            && total_votes.checked_mul(10_000)
+            && total_votes
+                .checked_mul(10_000)
                 .map(|tv| tv / total_gov >= MIN_QUORUM_BPS)
                 .unwrap_or(false);
 
@@ -550,6 +578,8 @@ impl ScholarshipTreasury {
         env.storage()
             .persistent()
             .set(&DataKey::FinalizedProposal(proposal_id), &status.clone());
+        
+        Self::extend_persistent(&env, &DataKey::FinalizedProposal(proposal_id));
 
         status
     }
@@ -610,6 +640,18 @@ impl ScholarshipTreasury {
 
     pub fn get_version(env: Env) -> String {
         String::from_str(&env, "1.0.0")
+    }
+
+    fn extend_instance(env: &Env) {
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_BUMP_THRESHOLD, INSTANCE_EXTEND_TO);
+    }
+
+    fn extend_persistent(env: &Env, key: &DataKey) {
+        env.storage()
+            .persistent()
+            .extend_ttl(key, PERSISTENT_BUMP_THRESHOLD, PERSISTENT_EXTEND_TO);
     }
 }
 

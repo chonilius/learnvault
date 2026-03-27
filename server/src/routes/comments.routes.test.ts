@@ -1,6 +1,6 @@
 import express, { type Express } from "express"
-import request from "supertest"
 import jwt from "jsonwebtoken"
+import request from "supertest"
 
 // ── Mocks must be declared before any imports that use these modules ─────────
 
@@ -97,18 +97,17 @@ describe("GET /api/proposals/:proposalId/comments", () => {
 		)
 
 		expect(res.status).toBe(200)
-		expect(mockedQuery).toHaveBeenCalledWith(
-			expect.stringContaining("LIMIT"),
-			["1", 5, 10],
-		)
+		expect(mockedQuery).toHaveBeenCalledWith(expect.stringContaining("LIMIT"), [
+			"1",
+			5,
+			10,
+		])
 	})
 
 	it("caps limit at 100 even if a larger value is sent", async () => {
 		mockedQuery.mockResolvedValueOnce({ rows: [] })
 
-		await request(buildApp()).get(
-			"/api/proposals/1/comments?limit=500",
-		)
+		await request(buildApp()).get("/api/proposals/1/comments?limit=500")
 
 		const [, params] = mockedQuery.mock.calls[0]
 		expect(params[1]).toBe(100)
@@ -176,7 +175,11 @@ describe("POST /api/comments", () => {
 		const res = await request(buildApp())
 			.post("/api/comments")
 			.set("Authorization", makeToken(AUTHOR))
-			.send({ proposal_id: "5", content: "Impersonation", author_address: OTHER })
+			.send({
+				proposal_id: "5",
+				content: "Impersonation",
+				author_address: OTHER,
+			})
 
 		expect(res.status).toBe(400)
 	})

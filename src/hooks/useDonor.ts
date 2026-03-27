@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
 import { rpcUrl } from "../contracts/util"
-import type {
-	DonorData,
-	DonorContribution,
-	Vote,
-	RpcEvent,
+import {
+	type DonorData,
+	type DonorContribution,
+	type Vote,
+	type RpcEvent,
 } from "../types/contracts"
 import { useContractIds } from "./useContractIds"
 import { useWallet } from "./useWallet"

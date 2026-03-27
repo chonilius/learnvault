@@ -44,7 +44,9 @@ const Leaderboard: React.FC = () => {
 					fullAddress: item.address,
 				}))
 				setLeaders(mapped)
-				setMyRank(typeof result.your_rank === "number" ? result.your_rank : null)
+				setMyRank(
+					typeof result.your_rank === "number" ? result.your_rank : null,
+				)
 			} catch (err) {
 				console.error(err)
 				setError("Unable to load rankings. Please try again later.")
@@ -60,7 +62,8 @@ const Leaderboard: React.FC = () => {
 		() =>
 			leaders.map((leader, index) => ({
 				...leader,
-				rank: (leader as LeaderboardEntry & { rank?: number }).rank ?? index + 1,
+				rank:
+					(leader as LeaderboardEntry & { rank?: number }).rank ?? index + 1,
 				balance: String(
 					(leader as LeaderboardEntry & { balance?: string }).balance ??
 						leader.lrnBalance,

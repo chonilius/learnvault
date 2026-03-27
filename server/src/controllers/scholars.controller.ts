@@ -222,7 +222,8 @@ export async function getScholarCredentials(
 	}
 
 	try {
-		const credentials = await stellarContractService.getScholarCredentials(address)
+		const credentials =
+			await stellarContractService.getScholarCredentials(address)
 		res.status(200).json({ credentials })
 	} catch (error) {
 		console.error("[scholars] Error fetching scholar credentials:", error)

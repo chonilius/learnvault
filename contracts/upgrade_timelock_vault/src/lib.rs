@@ -254,7 +254,7 @@ impl UpgradeTimelockVault {
     /// Returns true if the timelock has expired for the given contract.
     pub fn is_upgrade_ready(env: Env, contract_address: Address) -> bool {
         if let Some(proposal) = Self::get_upgrade_proposal(env.clone(), contract_address) {
-            let timelock_duration = Self::get_timelock_duration(env);
+            let timelock_duration = Self::get_timelock_duration(env.clone());
             let current_time = env.ledger().timestamp();
             current_time >= proposal.queued_at + timelock_duration
         } else {
@@ -278,8 +278,8 @@ impl UpgradeTimelockVault {
 #[cfg(test)]
 mod test {
     use super::*;
-    use soroban_sdk::testutils::{Address as _, BytesN as _};
-    use soroban_sdk::{contractclient, Address, BytesN, Env};
+    use soroban_sdk::testutils::{Address as _, Ledger};
+    use soroban_sdk::{contractclient, Address, BytesN, Env, IntoVal};
 
     #[contractclient(name = "UpgradeTimelockVaultClient")]
     pub trait UpgradeTimelockVaultInterface {
@@ -298,10 +298,6 @@ mod test {
         Env::default()
     }
 
-    fn create_env() -> Env {
-        Env::default()
-    }
-
     fn create_admin(env: &Env) -> Address {
         Address::generate(env)
     }
@@ -311,7 +307,7 @@ mod test {
     }
 
     fn create_wasm_hash(env: &Env) -> BytesN<32> {
-        BytesN::generate(env)
+        BytesN::from_array(env, &[0; 32])
     }
 
     #[test]
@@ -327,7 +323,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "NotInitialized")]
+    #[should_panic(expected = "Error(Contract, #1)")]
     fn test_initialize_twice_fails() {
         let env = create_env();
         let admin = create_admin(&env);
@@ -391,6 +387,7 @@ mod test {
         let contract = UpgradeTimelockVaultClient::new(&env, &env.register_contract(None, UpgradeTimelockVault {}));
 
         contract.initialize(&admin);
+        env.ledger().set_timestamp(1);
 
         env.mock_auths(&[soroban_sdk::testutils::MockAuth {
             address: &admin,
@@ -411,7 +408,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "UpgradeAlreadyQueued")]
+    #[should_panic(expected = "Error(Contract, #3)")]
     fn test_queue_upgrade_twice_fails() {
         let env = create_env();
         let admin = create_admin(&env);
@@ -478,7 +475,7 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "TimelockNotExpired")]
+    #[should_panic(expected = "Error(Contract, #5)")]
     fn test_execute_upgrade_before_timelock() {
         let env = create_env();
         let admin = create_admin(&env);

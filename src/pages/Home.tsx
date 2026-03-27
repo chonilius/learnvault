@@ -94,8 +94,12 @@ const Home: React.FC = () => {
 									</p>
 								</div>
 								<div className="md:w-2/3 w-full">
-									<DeferredSection fallback={<SectionSkeleton className="min-h-40" />}>
-										<Suspense fallback={<SectionSkeleton className="min-h-40" />}>
+									<DeferredSection
+										fallback={<SectionSkeleton className="min-h-40" />}
+									>
+										<Suspense
+											fallback={<SectionSkeleton className="min-h-40" />}
+										>
 											<MilestoneTracker
 												courseId="stellar-basics"
 												milestones={mockMilestones}
@@ -131,7 +135,9 @@ const Home: React.FC = () => {
 									</Link>{" "}
 									{t("home.sampleContracts.guessDesc2")}
 								</p>
-								<DeferredSection fallback={<SectionSkeleton className="min-h-40" />}>
+								<DeferredSection
+									fallback={<SectionSkeleton className="min-h-40" />}
+								>
 									<Suspense fallback={<SectionSkeleton className="min-h-40" />}>
 										<GuessTheNumber />
 									</Suspense>
