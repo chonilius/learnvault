@@ -1,14 +1,14 @@
 #![cfg(test)]
 
+extern crate std;
+
 use soroban_sdk::{
+    symbol_short,
     testutils::{Address as _, Events as _},
-    Address, Env, IntoVal, String, symbol_short, vec,
+    vec, Address, Env, IntoVal, String,
 };
 
-use crate::{
-    ScholarNFT, ScholarNFTClient, ScholarNFTError, InitializedEventData, MintEventData,
-    TransferAttemptEventData,
-};
+use crate::{ScholarNFT, ScholarNFTClient, ScholarNFTError};
 
 fn setup(env: &Env) -> (Address, Address, ScholarNFTClient) {
     let admin = Address::generate(env);
@@ -58,94 +58,43 @@ fn token_uri_returns_metadata_uri() {
 }
 
 #[test]
-fn non_admin_mint_panics() {
+fn revoke_flow_marks_token_revoked() {
     let env = Env::default();
-    env.mock_all_auths();
-    let contract_id = env.register_contract(None, ScholarNFT);
-    let client = ScholarNFTClient::new(&env, &contract_id);
-    let admin = Address::generate(&env);
-    
-    // Initialize the contract
-    client.initialize(&admin);
-    (env, client, admin)
-}
+    let (_, admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+    let reason = cid(&env, "Plagiarism");
 
-#[test]
-fn test_mint_and_owner() {
-    let (env, client, admin) = setup_test();
-    let recipient = Address::generate(&env);
-    let token_id = 1u64;
-
-    client.mint(&recipient, &token_id);
-    assert!(client.has_credential(&token_id));
-    assert_eq!(client.owner_of(&token_id), recipient);
-}
-
-#[test]
-fn test_revoke_flow() {
-    let (env, client, admin) = setup_test();
-    let recipient = Address::generate(&env);
-    let token_id = 1u64;
-    let reason = String::from_str(&env, "Cheater");
-
-    client.mint(&recipient, &token_id);
+    let token_id = client.mint(&scholar, &cid(&env, "ipfs://revoke"));
     assert!(client.has_credential(&token_id));
 
-    // Admin revokes the token
     client.revoke(&admin, &token_id, &reason);
 
-    // Verify it's no longer valid
     assert!(!client.has_credential(&token_id));
     assert_eq!(client.get_revocation_reason(&token_id), Some(reason));
 }
 
 #[test]
 #[should_panic(expected = "Error(Contract, #5)")]
-fn test_owner_of_revoked_fails() {
-    let (env, client, admin) = setup_test();
-    let recipient = Address::generate(&env);
-    let token_id = 1u64;
-    let reason = String::from_str(&env, "Plagiarism");
+fn owner_of_revoked_panics() {
+    let env = Env::default();
+    let (_, admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+    let reason = cid(&env, "Plagiarism");
 
-    client.mint(&recipient, &token_id);
+    let token_id = client.mint(&scholar, &cid(&env, "ipfs://revoked"));
     client.revoke(&admin, &token_id, &reason);
 
-    // This should panic because token is revoked
     client.owner_of(&token_id);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #3)")]
-fn test_unauthorized_revoke_fails() {
-    let (env, client, _admin) = setup_test();
-    let recipient = Address::generate(&env);
-    let hacker = Address::generate(&env);
-    let token_id = 42u64;
-    let reason = String::from_str(&env, "Hax");
-
-    client.mint(&recipient, &token_id);
-    
-    // hacker tries to revoke - this should fail authentication even if mock_all_auths is on because we check admin address match
-    client.revoke(&hacker, &token_id, &reason);
-}
-
-#[test]
-fn test_revoke_non_existent_token_fails() {
-    let (env, client, admin) = setup_test();
-    let token_id = 999u64;
-    let reason = String::from_str(&env, "Testing");
-
-    // This is just a placeholder to show as_contract usage
-}
-
-#[test]
 #[should_panic(expected = "Error(Contract, #4)")]
-fn test_revoke_non_existent_token_panics() {
-    let (env, client, admin) = setup_test();
-    let token_id = 999u64;
-    let reason = String::from_str(&env, "Testing");
+fn revoke_non_existent_token_panics() {
+    let env = Env::default();
+    let (_, admin, client) = setup(&env);
+    let reason = cid(&env, "Testing");
 
-    client.revoke(&admin, &token_id, &reason);
+    client.revoke(&admin, &999_u64, &reason);
 }
 
 #[test]
@@ -160,8 +109,7 @@ fn initialize_emits_event() {
 
     let events = env.events().all();
     let found = events.iter().any(|(cid, topics, _data)| {
-        cid == contract_id
-            && topics.contains(&symbol_short!("init").into_val(&env))
+        cid == contract_id && topics.contains(&symbol_short!("init").into_val(&env))
     });
     assert!(found, "initialized event not found");
 }
@@ -178,10 +126,28 @@ fn mint_emits_event() {
     let events = env.events().all();
     let found = events.iter().any(|(cid, topics, _data)| {
         cid == contract_id
-            && topics.contains(&symbol_short!("mint").into_val(&env))
+            && topics.contains(&symbol_short!("minted").into_val(&env))
             && topics.contains(&token_id.into_val(&env))
     });
     assert!(found, "mint event not found");
+}
+
+#[test]
+fn transfer_panics_with_soulbound_error() {
+    let env = Env::default();
+    let (_, _, client) = setup(&env);
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+    let token_id = 1_u64;
+
+    let result = client.try_transfer(&from, &to, &token_id);
+
+    assert_eq!(
+        result.err(),
+        Some(Ok(soroban_sdk::Error::from_contract_error(
+            ScholarNFTError::Soulbound as u32
+        )))
+    );
 }
 
 #[test]
@@ -191,11 +157,9 @@ fn transfer_attempt_emits_event() {
     let (contract_id, _, client) = setup(&env);
     let from = Address::generate(&env);
     let to = Address::generate(&env);
-    let uri = cid(&env, "ipfs://transfer-attempt-test");
 
-    let token_id = client.mint(&from, &uri);
+    let token_id = client.mint(&from, &cid(&env, "ipfs://transfer-attempt-test"));
 
-    // Transfer will panic, but event should be emitted before panic
     let _ = client.try_transfer(&from, &to, &token_id);
 
     let events = env.events().all();

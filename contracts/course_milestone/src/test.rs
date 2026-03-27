@@ -11,10 +11,11 @@ fn sid(env: &Env, value: &str) -> String {
 fn setup() -> (Env, Address, Address, CourseMilestoneClient<'static>) {
     let env = Env::default();
     let admin = Address::generate(&env);
+    let learn_token_contract = Address::generate(&env);
     let contract_id = env.register(CourseMilestone, ());
     env.mock_all_auths();
     let client = CourseMilestoneClient::new(&env, &contract_id);
-    client.initialize(&admin);
+    client.initialize(&admin, &learn_token_contract);
     (env, contract_id, admin, client)
 }
 

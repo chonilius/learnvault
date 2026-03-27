@@ -2,8 +2,8 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
-    panic_with_error, symbol_short,
+    contract, contracterror, contractevent, contractimpl, contracttype, panic_with_error,
+    symbol_short, Address, Env, String, Symbol, Vec,
 };
 
 #[contracttype]
@@ -54,6 +54,9 @@ pub enum Error {
     CourseAlreadyComplete = 6,
     InvalidMilestones = 7,
     CourseAlreadyExists = 8,
+    NotEnrolled = 9,
+    DuplicateSubmission = 10,
+    ContractPaused = 11,
 }
 
 #[contractevent]
@@ -88,6 +91,9 @@ impl CourseMilestone {
         }
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
+        env.storage()
+            .instance()
+            .set(&LEARN_TOKEN_KEY, &learn_token_contract);
     }
 
     // =======================
@@ -126,7 +132,7 @@ impl CourseMilestone {
 
     pub fn enroll(env: Env, learner: Address, course_id: String) {
         if Self::is_paused(env.clone()) {
-            panic!("Contract is paused");
+            panic_with_error!(&env, Error::ContractPaused);
         }
 
         Self::require_initialized(&env);
@@ -167,14 +173,14 @@ impl CourseMilestone {
         evidence_uri: String,
     ) {
         if Self::is_paused(env.clone()) {
-            panic!("Contract is paused");
+            panic_with_error!(&env, Error::ContractPaused);
         }
 
         Self::require_initialized(&env);
         learner.require_auth();
 
         if !Self::is_enrolled(env.clone(), learner.clone(), course_id.clone()) {
-            panic_with_error!(&env, Error::Unauthorized);
+            panic_with_error!(&env, Error::NotEnrolled);
         }
 
         let state_key = DataKey::MilestoneState(learner.clone(), course_id.clone(), milestone_id);
@@ -185,7 +191,7 @@ impl CourseMilestone {
             .unwrap_or(MilestoneStatus::NotStarted);
 
         if current_state != MilestoneStatus::NotStarted {
-            panic_with_error!(&env, Error::Unauthorized);
+            panic_with_error!(&env, Error::DuplicateSubmission);
         }
 
         let submission = MilestoneSubmission {
@@ -224,6 +230,15 @@ impl CourseMilestone {
             .unwrap_or(MilestoneStatus::NotStarted)
     }
 
+    pub fn get_milestone_status(
+        env: Env,
+        learner: Address,
+        course_id: String,
+        milestone_id: u32,
+    ) -> MilestoneStatus {
+        Self::get_milestone_state(env, learner, course_id, milestone_id)
+    }
+
     pub fn get_milestone_submission(
         env: Env,
         learner: Address,
@@ -252,8 +267,6 @@ impl CourseMilestone {
         }
     }
 }
-
-pub use learn_token_client::LearnTokenClient;
 
 #[cfg(test)]
 mod test;
