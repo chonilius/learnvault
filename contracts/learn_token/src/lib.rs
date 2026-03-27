@@ -154,7 +154,13 @@ impl LearnToken {
     }
 
     /// Transfer from is not allowed — LRN is soulbound.
-    pub fn transfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, _amount: i128) {
+    pub fn transfer_from(
+        _env: Env,
+        _spender: Address,
+        _from: Address,
+        _to: Address,
+        _amount: i128,
+    ) {
         panic_with_error!(&_env, LRNError::Soulbound);
     }
 

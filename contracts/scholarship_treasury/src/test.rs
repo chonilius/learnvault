@@ -1488,7 +1488,15 @@ fn setup_with_admin<'a>(
     client.initialize(&admin, &token_id, &gov_contract_id);
     env.set_auths(&[]);
 
-    (client, gov_contract_id, donor, recipient, token_id, gov_client, admin)
+    (
+        client,
+        gov_contract_id,
+        donor,
+        recipient,
+        token_id,
+        gov_client,
+        admin,
+    )
 }
 
 #[test]
@@ -1545,7 +1553,8 @@ fn finalize_proposal_approved_when_quorum_met_and_yes_wins() {
 
     // Advance past deadline
     let proposal = client.get_proposal(&proposal_id).unwrap();
-    env.ledger().set_sequence_number(proposal.deadline_ledger + 1);
+    env.ledger()
+        .set_sequence_number(proposal.deadline_ledger + 1);
 
     let status = client.finalize_proposal(&admin, &proposal_id);
 
@@ -1592,7 +1601,8 @@ fn finalize_proposal_rejected_when_quorum_not_met() {
     client.vote(&donor, &proposal_id, &true);
 
     let proposal = client.get_proposal(&proposal_id).unwrap();
-    env.ledger().set_sequence_number(proposal.deadline_ledger + 1);
+    env.ledger()
+        .set_sequence_number(proposal.deadline_ledger + 1);
 
     let status = client.finalize_proposal(&admin, &proposal_id);
 
@@ -1630,7 +1640,8 @@ fn finalize_proposal_rejected_when_no_votes_win() {
     client.vote(&donor, &proposal_id, &false);
 
     let proposal = client.get_proposal(&proposal_id).unwrap();
-    env.ledger().set_sequence_number(proposal.deadline_ledger + 1);
+    env.ledger()
+        .set_sequence_number(proposal.deadline_ledger + 1);
 
     let status = client.finalize_proposal(&admin, &proposal_id);
 
