@@ -217,9 +217,14 @@ test.describe("Critical flows (mock wallet)", () => {
 	}) => {
 		await page.goto("/dao/propose")
 
-		await page.getByLabel(/Title/i).fill("My Scholarship Proposal")
-		await page.getByLabel(/Description/i).fill("Fund one more scholar")
-		await page.getByLabel(/Funding Amount \(USDC\)/i).fill("250")
+		await expect(
+			page.getByRole("heading", { name: "Create Proposal" }),
+		).toBeVisible()
+		await page.locator('input[name="title"]').fill("My Scholarship Proposal")
+		await page
+			.locator('textarea[name="description"]')
+			.fill("Fund one more scholar")
+		await page.locator('input[name="fundingAmount"]').fill("250")
 		await page.getByTestId("submit-proposal").click()
 
 		await expect(page).toHaveURL(/\/dao\/proposals\?proposal=\d+/)
@@ -236,6 +241,7 @@ test.describe("Critical flows (mock wallet)", () => {
 	}) => {
 		await page.goto("/dao/proposals?proposal=1")
 
+		await expect(page.getByText("10 GOV").first()).toBeVisible()
 		await expect(page.getByTestId("vote-yes-count")).toContainText("0 GOV")
 		await page.getByTestId("vote-yes").click()
 		await expect(page.getByTestId("vote-yes-count")).toContainText("10 GOV")
