@@ -1,7 +1,7 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, Val, Vec, Symbol, symbol_short,
+    Address, Env, IntoVal, Val, Vec, Symbol,
     testutils::{Address as _, Ledger, LedgerInfo, MockAuth, MockAuthInvoke, Events},
     token::{StellarAssetClient, TokenClient},
 };
@@ -94,7 +94,9 @@ fn release_tranche_authorized(
     client: &MilestoneEscrowClient<'_>,
     proposal_id: u32,
 ) -> Result<(), Result<soroban_sdk::Error, soroban_sdk::InvokeError>> {
-    client.env.mock_all_auths();
+    if let Some(escrow) = client.get_escrow(&proposal_id) {
+        set_caller(client, "release_tranche", &escrow.admin, (proposal_id,));
+    }
     client.try_release_tranche(&proposal_id).map(|_| ())
 }
 
@@ -102,7 +104,9 @@ fn reclaim_inactive_authorized(
     client: &MilestoneEscrowClient<'_>,
     proposal_id: u32,
 ) -> Result<(), Result<soroban_sdk::Error, soroban_sdk::InvokeError>> {
-    client.env.mock_all_auths();
+    if let Some(escrow) = client.get_escrow(&proposal_id) {
+        set_caller(client, "reclaim_inactive", &escrow.admin, (proposal_id,));
+    }
     client.try_reclaim_inactive(&proposal_id).map(|_| ())
 }
 
@@ -249,8 +253,11 @@ fn reclaim_inactive_uses_configured_window_size() {
     set_timestamp(&env, START_TS + 1);
     reclaim_inactive_authorized(&client, 12).unwrap();
     assert_eq!(token_client(&env, &token).balance(&treasury), 975);
+}
+
+#[test]
 fn reclaim_inactive_emits_event() {
-    let (env, contract_id, _token, _admin, treasury, scholar) = setup();
+    let (env, contract_id, _token, _admin, _treasury, scholar) = setup();
     let client = MilestoneEscrowClient::new(&env, &contract_id);
 
     create_escrow(&client, 77, &scholar, 120, 4);

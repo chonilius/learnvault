@@ -140,11 +140,10 @@ impl MilestoneEscrow {
     }
 
     pub fn release_tranche(env: Env, proposal_id: u32) {
-        let admin = Self::admin(&env);
-        admin.require_auth();
-
         let key = DataKey::Escrow(proposal_id);
         let mut record = Self::get_or_panic(&env, &key);
+
+        record.admin.require_auth();
 
         if record.tranches_released >= record.total_tranches {
             panic_with_error!(&env, Error::AllTranchesReleased);
@@ -167,11 +166,10 @@ impl MilestoneEscrow {
     }
 
     pub fn reclaim_inactive(env: Env, proposal_id: u32) {
-        let admin = Self::admin(&env);
-        admin.require_auth();
-
         let key = DataKey::Escrow(proposal_id);
         let mut record = Self::get_or_panic(&env, &key);
+
+        record.admin.require_auth();
 
         let now = env.ledger().timestamp();
         let inactive_for = now.saturating_sub(record.last_activity);
