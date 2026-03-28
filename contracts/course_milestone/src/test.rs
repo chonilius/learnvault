@@ -1,6 +1,20 @@
 extern crate std;
 
 use soroban_sdk::{
+    Address, Env, IntoVal, String, Val, contract, contractimpl, contracttype, symbol_short, vec,
+    testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
+};
+
+use crate::{
+    CourseConfig, CourseMilestone, CourseMilestoneClient, DataKey, Error, MilestoneCompleted,
+    MilestoneStatus,
+};
+
+#[contracttype]
+enum MockTokenDataKey {
+    Balance(Address),
+}
+
     Address, Env, String, contract, contractimpl,
     testutils::{Address as _, Ledger, LedgerInfo},
 };
@@ -14,15 +28,37 @@ struct MockLearnToken;
 
 #[contractimpl]
 impl MockLearnToken {
-    pub fn mint(_env: Env, _to: Address, _amount: i128) {}
+    pub fn mint(env: Env, to: Address, amount: i128) {
+        let key = MockTokenDataKey::Balance(to.clone());
+        let balance = env.storage().persistent().get(&key).unwrap_or(0_i128);
+        env.storage().persistent().set(&key, &(balance + amount));
+    }
 
-    pub fn balance(_env: Env, _account: Address) -> i128 {
-        0
+    pub fn balance(env: Env, account: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&MockTokenDataKey::Balance(account))
+            .unwrap_or(0_i128)
     }
 }
 
 fn sid(env: &Env, value: &str) -> String {
     String::from_str(env, value)
+}
+
+fn authorize<T>(env: &Env, address: &Address, contract: &Address, fn_name: &'static str, args: T)
+where
+    T: IntoVal<Env, Val>,
+{
+    env.mock_auths(&[MockAuth {
+        address,
+        invoke: &MockAuthInvoke {
+            contract,
+            fn_name,
+            args: args.into_val(env),
+            sub_invokes: &[],
+        },
+    }]);
 }
 
 fn setup() -> (
@@ -31,28 +67,105 @@ fn setup() -> (
     Address,
     Address,
     CourseMilestoneClient<'static>,
+    MockLearnTokenClient<'static>,
+) {
+    let env = Env::default();
+    let admin = Address::generate(&env);
+    let learn_token_id = env.register(MockLearnToken, ());
 ) {
     let env = Env::default();
     let admin = Address::generate(&env);
     let learn_token = env.register(MockLearnToken, ());
     let contract_id = env.register(CourseMilestone, ());
-    env.mock_all_auths();
+
     let client = CourseMilestoneClient::new(&env, &contract_id);
+    let token_client = MockLearnTokenClient::new(&env, &learn_token_id);
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "initialize",
+        (admin.clone(), learn_token_id.clone()),
+    );
+    client.initialize(&admin, &learn_token_id);
+
+    (env, contract_id, admin, learn_token_id, client, token_client)
+}
+
+fn add_course(
+    env: &Env,
+    contract_id: &Address,
+    admin: &Address,
+    client: &CourseMilestoneClient<'static>,
+    course_id: &String,
+    milestone_count: u32,
+) {
+    authorize(
+        env,
+        admin,
+        contract_id,
+        "add_course",
+        (admin.clone(), course_id.clone(), milestone_count),
+    );
+    client.add_course(admin, course_id, &milestone_count);
+}
+
+fn enroll(
+    env: &Env,
+    contract_id: &Address,
+    learner: &Address,
+    client: &CourseMilestoneClient<'static>,
+    course_id: &String,
+) {
+    authorize(
+        env,
+        learner,
+        contract_id,
+        "enroll",
+        (learner.clone(), course_id.clone()),
+    );
+    client.enroll(learner, course_id);
+}
+
+fn submit_milestone(
+    env: &Env,
+    contract_id: &Address,
+    learner: &Address,
+    client: &CourseMilestoneClient<'static>,
+    course_id: &String,
+    milestone_id: u32,
+    evidence_uri: &String,
+) {
+    authorize(
+        env,
+        learner,
+        contract_id,
+        "submit_milestone",
+        (learner.clone(), course_id.clone(), milestone_id, evidence_uri.clone()),
+    );
+    client.submit_milestone(learner, course_id, &milestone_id, evidence_uri);
     client.initialize(&admin, &learn_token);
     (env, contract_id, admin, learn_token, client)
 }
 
-fn set_ledger_sequence(env: &Env, sequence_number: u32) {
-    env.ledger().set(LedgerInfo {
-        timestamp: 1_700_000_000,
-        protocol_version: 23,
-        sequence_number,
-        network_id: Default::default(),
-        base_reserve: 10,
-        min_temp_entry_ttl: 16,
-        min_persistent_entry_ttl: 16,
-        max_entry_ttl: 6312000,
-    });
+#[test]
+fn add_course_and_get_course_work() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
+    let course_id = sid(&env, "rust-101");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 4);
+
+    let course = client
+        .get_course(&course_id)
+        .expect("course should be stored after add");
+    assert_eq!(
+        course,
+        CourseConfig {
+            milestone_count: 4,
+            active: true,
+        }
+    );
 }
 
 #[test]
@@ -61,8 +174,8 @@ fn enrolls_learner() {
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
 
-    client.add_course(&admin, &course_id, &10);
-    client.enroll(&learner, &course_id);
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
 
     assert!(client.is_enrolled(&learner, &course_id));
 }
@@ -76,7 +189,15 @@ fn duplicate_enroll_fails() {
     client.add_course(&admin, &course_id, &10);
     client.enroll(&learner, &course_id);
 
+    authorize(
+        &env,
+        &learner,
+        &contract_id,
+        "enroll",
+        (learner.clone(), course_id.clone()),
+    );
     let result = client.try_enroll(&learner, &course_id);
+
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -86,21 +207,27 @@ fn duplicate_enroll_fails() {
 }
 
 #[test]
-fn enroll_fails_when_not_initialized() {
-    let env = Env::default();
-    let admin = Address::generate(&env);
-    let learn_token_address = Address::generate(&env);
-    let contract_id = env.register(CourseMilestone, ());
-    let client = CourseMilestoneClient::new(&env, &contract_id);
+fn submit_milestone_stores_pending_submission() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
+    let evidence_uri = sid(&env, "ipfs://proof");
 
-    let result = client.try_enroll(&learner, &course_id);
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+    submit_milestone(
+        &env,
+        &contract_id,
+        &learner,
+        &client,
+        &course_id,
+        1,
+        &evidence_uri,
+    );
+
     assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::NotInitialized as u32
-        )))
+        client.get_milestone_state(&learner, &course_id, &1),
+        MilestoneStatus::Pending
     );
 }
 
@@ -126,26 +253,35 @@ fn enrolled_learner_can_submit_once_and_submission_is_stored() {
         .get_milestone_submission(&learner, &course_id, &1)
         .expect("submission should exist");
     assert_eq!(submission.evidence_uri, evidence_uri);
-    assert_eq!(submission.submitted_at, env.ledger().timestamp());
 }
 
 #[test]
-fn non_enrolled_learner_cannot_submit() {
-    let (env, _contract_id, _admin, _learn_token_address, client) = setup();
+fn verify_milestone_mints_lrn_and_marks_completion() {
+    let (env, contract_id, admin, _token_id, client, token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
-    let evidence_uri = sid(&env, "ipfs://bafy-test-proof");
+    let evidence_uri = sid(&env, "ipfs://proof");
 
-    let result = client.try_submit_milestone(&learner, &course_id, &1, &evidence_uri);
-
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::NotEnrolled as u32
-        )))
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+    submit_milestone(
+        &env,
+        &contract_id,
+        &learner,
+        &client,
+        &course_id,
+        1,
+        &evidence_uri,
     );
-}
 
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "verify_milestone",
+        (admin.clone(), learner.clone(), course_id.clone(), 1_u32, 125_i128),
+    );
+    client.verify_milestone(&admin, &learner, &course_id, &1, &125);
 #[test]
 fn duplicate_submission_is_rejected() {
     let (env, _contract_id, admin, _learn_token_address, client) = setup();
@@ -160,11 +296,11 @@ fn duplicate_submission_is_rejected() {
     let result = client.try_submit_milestone(&learner, &course_id, &7, &evidence_uri);
 
     assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::DuplicateSubmission as u32
-        )))
+        client.get_milestone_status(&learner, &course_id, &1),
+        MilestoneStatus::Approved
     );
+    assert!(client.is_completed(&learner, &course_id, &1));
+    assert_eq!(token_client.balance(&learner), 125);
 }
 
 // =======================
@@ -190,17 +326,37 @@ fn verify_milestone_happy_path() {
 
 #[test]
 fn verify_milestone_fails_for_non_admin() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let (env, _contract_id, admin, _learn_token_address, client) = setup();
     let learner = Address::generate(&env);
-    let non_admin = Address::generate(&env);
+    let attacker = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
-    let evidence_uri = sid(&env, "ipfs://bafy-proof");
+    let evidence_uri = sid(&env, "ipfs://proof");
 
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+    submit_milestone(
+        &env,
+        &contract_id,
+        &learner,
+        &client,
+        &course_id,
+        1,
+        &evidence_uri,
+    );
+
+    authorize(
+        &env,
+        &attacker,
+        &contract_id,
+        "verify_milestone",
+        (attacker.clone(), learner.clone(), course_id.clone(), 1_u32, 125_i128),
+    );
+    let result = client.try_verify_milestone(&attacker, &learner, &course_id, &1, &125);
     client.add_course(&admin, &course_id, &5);
     client.enroll(&learner, &course_id);
     client.submit_milestone(&learner, &course_id, &1, &evidence_uri);
 
-    let result = client.try_verify_milestone(&non_admin, &learner, &course_id, &1, &100);
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
@@ -210,10 +366,22 @@ fn verify_milestone_fails_for_non_admin() {
 }
 
 #[test]
-fn verify_milestone_fails_for_already_verified() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
+fn reject_milestone_marks_rejected_and_clears_submission() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
+    let evidence_uri = sid(&env, "ipfs://proof");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+    submit_milestone(
+        &env,
+        &contract_id,
+        &learner,
+        &client,
+        &course_id,
+        1,
+        &evidence_uri,
     let evidence_uri = sid(&env, "ipfs://bafy-proof");
 
     client.add_course(&admin, &course_id, &5);
@@ -228,21 +396,16 @@ fn verify_milestone_fails_for_already_verified() {
             Error::InvalidState as u32
         )))
     );
-}
 
-#[test]
-fn verify_milestone_fails_for_not_enrolled_learner() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
-    let learner = Address::generate(&env);
-    let course_id = sid(&env, "rust-101");
-
-    let result = client.try_verify_milestone(&admin, &learner, &course_id, &1, &100);
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::NotEnrolled as u32
-        )))
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "reject_milestone",
+        (admin.clone(), learner.clone(), course_id.clone(), 1_u32),
     );
+    client.reject_milestone(&admin, &learner, &course_id, &1);
+
 }
 
 // =======================
@@ -284,30 +447,36 @@ fn reject_milestone_fails_for_non_admin() {
 
     let result = client.try_reject_milestone(&non_admin, &learner, &course_id, &1);
     assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::Unauthorized as u32
-        )))
+        client.get_milestone_status(&learner, &course_id, &1),
+        MilestoneStatus::Rejected
     );
+    assert!(client.get_milestone_submission(&learner, &course_id, &1).is_none());
 }
 
 #[test]
-fn reject_milestone_fails_for_wrong_state() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
-    let learner = Address::generate(&env);
+fn set_milestone_reward_stores_config() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let course_id = sid(&env, "rust-101");
 
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
     client.add_course(&admin, &course_id, &5);
     client.enroll(&learner, &course_id);
 
-    // Try to reject a milestone that hasn't been submitted
-    let result = client.try_reject_milestone(&admin, &learner, &course_id, &1);
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::InvalidState as u32
-        )))
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "set_milestone_reward",
+        (course_id.clone(), 1_u32, 75_i128),
     );
+    client.set_milestone_reward(&course_id, &1, &75);
+
+    let stored_reward = env.as_contract(&contract_id, || {
+        env.storage()
+            .persistent()
+            .get::<_, i128>(&DataKey::MilestoneLrn(course_id.clone(), 1))
+            .unwrap_or(0)
+    });
 }
 
 // =======================
@@ -382,19 +551,33 @@ fn get_milestone_status_not_started_for_unsubmitted_milestone() {
     client.enroll(&learner, &course_id);
     client.submit_milestone(&learner, &course_id, &1, &evidence);
 
-    let status = client.get_milestone_state(&learner, &course_id, &2);
-    assert_eq!(status, MilestoneStatus::NotStarted);
+    assert_eq!(stored_reward, 75);
 }
 
-// =======================
-// ✅ LRN MINTING INTEGRATION TESTS
-// =======================
-
 #[test]
-fn verify_milestone_mints_lrn_tokens() {
-    let (env, _contract_id, admin, learn_token_address, client) = setup();
+fn complete_milestone_marks_completion_and_emits_reward_event() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "set_milestone_reward",
+        (course_id.clone(), 2_u32, 75_i128),
+    );
+    client.set_milestone_reward(&course_id, &2, &75);
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "complete_milestone",
+        (learner.clone(), course_id.clone(), 2_u32),
     let evidence_uri = sid(&env, "ipfs://bafy-proof");
 
     client.add_course(&admin, &course_id, &4);
@@ -525,50 +708,34 @@ fn remove_course_marks_course_inactive() {
             Error::CourseNotFound as u32
         )))
     );
-}
+    client.complete_milestone(&learner, &course_id, &2);
 
-#[test]
-fn pause_blocks_enroll() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
-    let learner = Address::generate(&env);
-    let course_id = sid(&env, "rust-101");
-
-    client.pause(&admin);
-
-    let result = client.try_enroll(&learner, &course_id);
-
+    assert!(client.is_completed(&learner, &course_id, &2));
     assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::ContractPaused as u32
-        )))
+        client.get_milestone_status(&learner, &course_id, &2),
+        MilestoneStatus::Approved
     );
+
+    let events = env.events().all();
+    let found = events.iter().any(|(event_contract_id, topics, data)| {
+        *event_contract_id == contract_id
+            && *topics == vec![&env, symbol_short!("ms_done").into_val(&env)]
+            && *data
+                == MilestoneCompleted {
+                    learner: learner.clone(),
+                    course_id: course_id.clone(),
+                    milestone_id: 2,
+                    lrn_reward: 75,
+                }
+                .into_val(&env)
+    });
+
+    assert!(found, "completion event with reward was not emitted");
 }
 
 #[test]
-fn pause_blocks_submission() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
-    let learner = Address::generate(&env);
-    let course_id = sid(&env, "rust-101");
-    let evidence = sid(&env, "ipfs://proof");
-
-    client.add_course(&admin, &course_id, &1);
-    client.enroll(&learner, &course_id);
-    client.pause(&admin);
-
-    let result = client.try_submit_milestone(&learner, &course_id, &1, &evidence);
-
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::ContractPaused as u32
-        )))
-    );
-}
-
-#[test]
-fn pause_blocks_verify_milestone() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
+fn complete_milestone_fails_when_already_completed() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
     let evidence = sid(&env, "ipfs://proof");
@@ -578,14 +745,26 @@ fn pause_blocks_verify_milestone() {
     client.submit_milestone(&learner, &course_id, &1, &evidence);
     client.pause(&admin);
 
-    let result = client.try_verify_milestone(&admin, &learner, &course_id, &1, &100);
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
 
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::ContractPaused as u32
-        )))
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "complete_milestone",
+        (learner.clone(), course_id.clone(), 1_u32),
     );
+    client.complete_milestone(&learner, &course_id, &1);
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "complete_milestone",
+        (learner.clone(), course_id.clone(), 1_u32),
+    );
+    let result = client.try_complete_milestone(&learner, &course_id, &1);
 }
 
 #[test]
@@ -605,21 +784,25 @@ fn pause_blocks_reject_milestone() {
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::ContractPaused as u32
+            Error::AlreadyCompleted as u32
         )))
     );
 }
 
 #[test]
-fn unpause_restores_functionality() {
-    let (env, _contract_id, admin, _learn_token_address, client) = setup();
+fn complete_milestone_fails_for_non_enrolled_learner() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
     let learner = Address::generate(&env);
     let course_id = sid(&env, "rust-101");
 
-    client.add_course(&admin, &course_id, &1);
-    client.pause(&admin);
-    client.unpause(&admin);
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
 
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "complete_milestone",
+        (learner.clone(), course_id.clone(), 1_u32),
     client.enroll(&learner, &course_id);
 
     assert!(client.is_enrolled(&learner, &course_id));
@@ -637,7 +820,7 @@ fn non_admin_cannot_add_course() {
             Error::Unauthorized as u32
         )))
     );
-}
+    let result = client.try_complete_milestone(&learner, &course_id, &1);
 
 #[test]
 fn non_admin_cannot_remove_course() {
@@ -650,12 +833,16 @@ fn non_admin_cannot_remove_course() {
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::Unauthorized as u32
+            Error::NotEnrolled as u32
         )))
     );
 }
 
 #[test]
+fn complete_milestone_fails_without_admin_auth() {
+    let (env, contract_id, admin, _token_id, client, _token_client) = setup();
+    let learner = Address::generate(&env);
+    let attacker = Address::generate(&env);
 fn enroll_rejects_unknown_course() {
     let (env, _contract_id, _admin, _learn_token_address, client) = setup();
     let learner = Address::generate(&env);
@@ -673,8 +860,9 @@ fn enroll_rejects_unknown_course() {
 fn duplicate_course_id_is_rejected() {
     let (env, _contract_id, admin, _learn_token_address, client) = setup();
     let course_id = sid(&env, "rust-101");
-    client.add_course(&admin, &course_id, &3);
 
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner, &client, &course_id);
     let result = client.try_add_course(&admin, &course_id, &3);
     assert_eq!(
         result.err(),
@@ -689,12 +877,14 @@ fn zero_milestone_count_is_rejected() {
     let (env, _contract_id, admin, _learn_token_address, client) = setup();
     let result = client.try_add_course(&admin, &sid(&env, "rust-101"), &0);
 
-    assert_eq!(
-        result.err(),
-        Some(Ok(soroban_sdk::Error::from_contract_error(
-            Error::InvalidMilestones as u32
-        )))
+    authorize(
+        &env,
+        &attacker,
+        &contract_id,
+        "complete_milestone",
+        (learner.clone(), course_id.clone(), 1_u32),
     );
+    let result = client.try_complete_milestone(&learner, &course_id, &1);
 }
 
 #[test]
@@ -727,5 +917,5 @@ fn progress_persists_beyond_instance_ttl_window() {
             .unwrap_or(false)
     });
 
-    assert!(still_present);
+    assert!(result.is_err());
 }

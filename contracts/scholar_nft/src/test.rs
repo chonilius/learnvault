@@ -1,11 +1,11 @@
 #![cfg(test)]
 
 use crate::{
-    AdminChangedEventData, InitializedEventData, MintEventData, ScholarNFT, ScholarNFTClient,
+    AdminChangedEventData, DataKey, InitializedEventData, MintEventData, ScholarNFT, ScholarNFTClient,
     ScholarNFTError,
 };
 use soroban_sdk::{
-    testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
+    testutils::{storage::Persistent, Address as _, Events as _, MockAuth, MockAuthInvoke},
     Address, Env, IntoVal, String, symbol_short,
 };
 
@@ -102,7 +102,6 @@ fn test_old_admin_cannot_mint_after_transfer() {
     }]);
     client.transfer_admin(&new_admin);
 
-    // old_admin tries to mint — stored admin is now new_admin, so auth fails
     env.mock_auths(&[MockAuth {
         address: &old_admin,
         invoke: &MockAuthInvoke {
@@ -197,7 +196,7 @@ fn test_double_initialize_reverts() {
 #[test]
 fn test_revoke_flow() {
     let env = Env::default();
-    let (_, admin, client) = setup(&env);
+    let (_, _admin, client) = setup(&env);
     let recipient = Address::generate(&env);
     let reason = String::from_str(&env, "Cheater");
 
@@ -205,7 +204,7 @@ fn test_revoke_flow() {
     let token_id = client.mint(&recipient, &cid(&env, "ipfs://test"));
     assert!(client.has_credential(&token_id));
 
-    client.revoke(&admin, &token_id, &reason);
+    client.revoke(&token_id, &reason);
 
     assert!(!client.has_credential(&token_id));
     assert!(client.is_revoked(&token_id));
@@ -216,19 +215,19 @@ fn test_revoke_flow() {
 #[should_panic(expected = "Error(Contract, #5)")]
 fn test_owner_of_revoked_fails() {
     let env = Env::default();
-    let (_, admin, client) = setup(&env);
+    let (_, _admin, client) = setup(&env);
     let recipient = Address::generate(&env);
     let reason = String::from_str(&env, "Plagiarism");
 
     env.mock_all_auths();
     let token_id = client.mint(&recipient, &cid(&env, "ipfs://test"));
-    client.revoke(&admin, &token_id, &reason);
+    client.revoke(&token_id, &reason);
 
     client.owner_of(&token_id);
 }
 
 #[test]
-#[should_panic(expected = "Error(Contract, #3)")]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
 fn test_unauthorized_revoke_fails() {
     let env = Env::default();
     let (contract_id, _admin, client) = setup(&env);
@@ -244,37 +243,37 @@ fn test_unauthorized_revoke_fails() {
         invoke: &MockAuthInvoke {
             contract: &contract_id,
             fn_name: "revoke",
-            args: (&hacker, token_id, reason.clone()).into_val(&env),
+            args: (&token_id, reason.clone()).into_val(&env),
             sub_invokes: &[],
         },
     }]);
-    client.revoke(&hacker, &token_id, &reason);
+    client.revoke(&token_id, &reason);
 }
 
 #[test]
 #[should_panic(expected = "Error(Contract, #4)")]
 fn test_revoke_non_existent_token_panics() {
     let env = Env::default();
-    let (_, admin, client) = setup(&env);
+    let (_, _admin, client) = setup(&env);
     let token_id = 999u64;
     let reason = String::from_str(&env, "Testing");
 
     env.mock_all_auths();
-    client.revoke(&admin, &token_id, &reason);
+    client.revoke(&token_id, &reason);
 }
 
 #[test]
 #[should_panic(expected = "Error(Contract, #8)")]
 fn test_revoke_already_revoked_panics() {
     let env = Env::default();
-    let (_, admin, client) = setup(&env);
+    let (_, _admin, client) = setup(&env);
     let scholar = Address::generate(&env);
     let reason = String::from_str(&env, "Reason");
 
     env.mock_all_auths();
     let token_id = client.mint(&scholar, &cid(&env, "ipfs://test"));
-    client.revoke(&admin, &token_id, &reason);
-    client.revoke(&admin, &token_id, &reason);
+    client.revoke(&token_id, &reason);
+    client.revoke(&token_id, &reason);
 }
 
 #[test]
@@ -373,4 +372,20 @@ fn transfer_attempt_reverts_soulbound() {
 
     let res = client.try_transfer(&from, &to, &token_id);
     assert!(res.is_err());
+}
+
+#[test]
+fn test_mint_extends_ttl() {
+    let env = Env::default();
+    let (contract_id, _admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+
+    env.mock_all_auths();
+    let token_id = client.mint(&scholar, &cid(&env, "ipfs://ttl-test"));
+
+    env.as_contract(&contract_id, || {
+        assert!(env.storage().persistent().get_ttl(&DataKey::Owner(token_id)) >= 6_307_200);
+        assert!(env.storage().persistent().get_ttl(&DataKey::TokenUri(token_id)) >= 6_307_200);
+        assert!(env.storage().persistent().get_ttl(&DataKey::Metadata(token_id)) >= 6_307_200);
+    });
 }

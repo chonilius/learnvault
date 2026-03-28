@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { useNavigate } from "react-router-dom"
 import { useProposals } from "../hooks/useProposals"
+import { useToast } from "../components/Toast/ToastProvider"
 import { useWallet } from "../hooks/useWallet"
 
 type ProposalType = "scholarship" | "parameter_change" | "new_course"
@@ -42,6 +43,13 @@ const DaoPropose: React.FC = () => {
 	const { address } = useWallet()
 	const navigate = useNavigate()
 	const { createProposal, isSubmittingProposal, votingPower } = useProposals()
+	const { showSuccess, showError, showInfo } = useToast()
+	const {
+		createProposal,
+		getGovernanceTokenBalance,
+		getMinimumProposalTokens,
+		isConnected,
+	} = useScholarshipTreasury()
 	const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit")
 	const [submissionError, setSubmissionError] = useState<string | null>(null)
 	const [submissionSuccess, setSubmissionSuccess] = useState<string | null>(
@@ -143,10 +151,49 @@ const DaoPropose: React.FC = () => {
 			}, 700)
 		} catch (error) {
 			setSubmissionError(
+			// Prepare proposal data for contract submission
+			const proposalData = {
+				title: formData.title,
+				description: formData.description,
+				proposalType: formData.type,
+				typeSpecificData: {
+					applicationUrl: formData.applicationUrl,
+					fundingAmount: formData.fundingAmount
+						? parseFloat(formData.fundingAmount)
+						: undefined,
+					parameterName: formData.parameterName,
+					parameterValue: formData.parameterValue,
+					parameterReason: formData.parameterReason,
+					courseTitle: formData.courseTitle,
+					courseDescription: formData.courseDescription,
+					courseDuration: formData.courseDuration
+						? parseInt(formData.courseDuration)
+						: undefined,
+					courseDifficulty: formData.courseDifficulty,
+				},
+			}
+
+			// Submit to ScholarshipTreasury contract
+			showInfo("Waiting for wallet approval…")
+			const txHash = await createProposal(proposalData)
+
+			// Extract proposal ID from transaction hash (mock implementation)
+			const proposalId = txHash.includes("PROPOSAL_")
+				? txHash.split("_")[1]
+				: Math.floor(Math.random() * 1000) + 1
+
+			showSuccess("Proposal submitted successfully!")
+			// Redirect to proposal detail page
+			void navigate(`/dao/proposals#proposal-${proposalId}`)
+		} catch (error) {
+			console.error("Failed to submit proposal:", error)
+			showError(
 				error instanceof Error
 					? error.message
 					: "Failed to submit proposal. Please try again.",
 			)
+		} finally {
+			setIsSubmitting(false)
 		}
 	}
 
