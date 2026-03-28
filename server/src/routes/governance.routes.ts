@@ -1,11 +1,14 @@
 import { Router } from "express"
 
 import {
+	cancelProposal,
 	castVote,
 	createGovernanceProposal,
+	getProposalStatus,
 	getGovernanceProposals,
 	getVotingPower,
 } from "../controllers/governance.controller"
+import { requireAdmin } from "../middleware/admin.middleware"
 
 export const governanceRouter = Router()
 
@@ -131,4 +134,58 @@ governanceRouter.get("/governance/voting-power/:address", (req, res) => {
 
 governanceRouter.post("/governance/vote", (req, res) => {
 	void castVote(req, res)
+})
+
+/**
+ * @openapi
+ * /api/proposals/{id}/status:
+ *   get:
+ *     tags: [Governance]
+ *     summary: Get the current public state of a proposal
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Proposal state details
+ *       400:
+ *         $ref: '#/components/responses/BadRequestError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ */
+governanceRouter.get("/proposals/:id/status", (req, res) => {
+	void getProposalStatus(req, res)
+})
+
+/**
+ * @openapi
+ * /api/proposals/{id}:
+ *   delete:
+ *     tags: [Governance]
+ *     summary: Cancel an open proposal
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Proposal cancelled
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       409:
+ *         description: Proposal already closed or cancelled
+ */
+governanceRouter.delete("/proposals/:id", requireAdmin, (req, res) => {
+	void cancelProposal(req, res)
 })

@@ -5,6 +5,7 @@ import { pool } from "../db/index"
 import { stellarContractService } from "../services/stellar-contract.service"
 
 type ProposalStatus = "pending" | "approved" | "rejected"
+type ProposalPublicState = "open" | "closed" | "cancelled" | "executed"
 
 function parseStatus(value: unknown): ProposalStatus | undefined {
 	if (typeof value !== "string") return undefined
@@ -24,6 +25,32 @@ function parsePositiveInt(value: unknown, fallback: number): number {
 	const parsed = Number.parseInt(value, 10)
 	if (Number.isNaN(parsed) || parsed < 1) return fallback
 	return parsed
+}
+
+function parseProposalId(value: unknown): number | null {
+	if (typeof value !== "string") return null
+	const parsed = Number.parseInt(value, 10)
+	if (Number.isNaN(parsed) || parsed < 1) return null
+	return parsed
+}
+
+function deriveProposalState(proposal: {
+	status: string
+	cancelled?: boolean | null
+	deadline?: Date | string | null
+}): ProposalPublicState {
+	if (proposal.cancelled) return "cancelled"
+	if (proposal.status === "approved") return "executed"
+	if (proposal.status === "rejected") return "closed"
+
+	if (proposal.deadline) {
+		const deadline = new Date(proposal.deadline)
+		if (!Number.isNaN(deadline.getTime()) && deadline.getTime() <= Date.now()) {
+			return "closed"
+		}
+	}
+
+	return "open"
 }
 
 export async function getGovernanceProposals(
@@ -57,7 +84,7 @@ export async function getGovernanceProposals(
 
 		const proposalValues = [...values, limit, offset]
 		const proposalsResult = await pool.query(
-			`SELECT id, author_address, title, description, amount, votes_for, votes_against, status, deadline
+			`SELECT id, author_address, title, description, amount, votes_for, votes_against, status, deadline, cancelled
 			 FROM proposals
 			 ${whereClause}
 			 ORDER BY created_at DESC
@@ -118,7 +145,10 @@ const createProposalSchema = z.object({
 })
 
 const castVoteSchema = z.object({
-	proposal_id: z.number().int().positive("proposal_id must be a positive integer"),
+	proposal_id: z
+		.number()
+		.int()
+		.positive("proposal_id must be a positive integer"),
 	voter_address: z
 		.string()
 		.min(56, "voter_address must be a valid Stellar address")
@@ -232,12 +262,19 @@ export async function castVote(req: Request, res: Response): Promise<void> {
 	try {
 		// 1. Check if proposal exists
 		const proposalResult = await pool.query(
-			"SELECT id, status FROM proposals WHERE id = $1",
+			"SELECT id, status, cancelled FROM proposals WHERE id = $1",
 			[proposal_id],
 		)
 
 		if (proposalResult.rows.length === 0) {
 			res.status(404).json({ error: "Proposal not found" })
+			return
+		}
+
+		if (proposalResult.rows[0].cancelled) {
+			res.status(400).json({
+				error: "Voting is closed for this proposal",
+			})
 			return
 		}
 
@@ -317,6 +354,89 @@ export async function castVote(req: Request, res: Response): Promise<void> {
 		console.error("[governance] Vote casting failed:", err)
 		res.status(500).json({
 			error: "Failed to cast vote",
+			message: err instanceof Error ? err.message : String(err),
+		})
+	}
+}
+
+export async function getProposalStatus(
+	req: Request,
+	res: Response,
+): Promise<void> {
+	const proposalId = parseProposalId(req.params.id)
+	if (!proposalId) {
+		res.status(400).json({ error: "Invalid proposal id" })
+		return
+	}
+
+	try {
+		const result = await pool.query(
+			"SELECT id, status, deadline, cancelled FROM proposals WHERE id = $1",
+			[proposalId],
+		)
+
+		if (result.rows.length === 0) {
+			res.status(404).json({ error: "Proposal not found" })
+			return
+		}
+
+		const proposal = result.rows[0]
+		res.status(200).json({
+			id: proposal.id,
+			state: deriveProposalState(proposal),
+			status: proposal.status,
+			cancelled: Boolean(proposal.cancelled),
+			deadline: proposal.deadline ?? null,
+		})
+	} catch (err) {
+		console.error("[governance] Get proposal status failed:", err)
+		res.status(500).json({ error: "Failed to fetch proposal status" })
+	}
+}
+
+export async function cancelProposal(
+	req: Request,
+	res: Response,
+): Promise<void> {
+	const proposalId = parseProposalId(req.params.id)
+	if (!proposalId) {
+		res.status(400).json({ error: "Invalid proposal id" })
+		return
+	}
+
+	try {
+		const proposalResult = await pool.query(
+			"SELECT id, status, deadline, cancelled FROM proposals WHERE id = $1",
+			[proposalId],
+		)
+
+		if (proposalResult.rows.length === 0) {
+			res.status(404).json({ error: "Proposal not found" })
+			return
+		}
+
+		const proposal = proposalResult.rows[0]
+
+		if (proposal.cancelled) {
+			res.status(409).json({ error: "Proposal is already cancelled" })
+			return
+		}
+
+		if (deriveProposalState(proposal) !== "open") {
+			res.status(409).json({ error: "Only open proposals can be cancelled" })
+			return
+		}
+
+		await stellarContractService.cancelProposal({ proposalId })
+		await pool.query("UPDATE proposals SET cancelled = TRUE WHERE id = $1", [
+			proposalId,
+		])
+
+		res.status(204).end()
+	} catch (err) {
+		console.error("[governance] Cancel proposal failed:", err)
+		res.status(500).json({
+			error: "Failed to cancel proposal",
 			message: err instanceof Error ? err.message : String(err),
 		})
 	}
