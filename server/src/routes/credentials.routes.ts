@@ -1,10 +1,68 @@
 import { Router } from "express"
 
-import { createCredentialMetadata } from "../controllers/credentials.controller"
+import {
+	createCredentialMetadata,
+	getCredentialsByAddress,
+} from "../controllers/credentials.controller"
 import * as schemas from "../lib/zod-schemas"
+import { createRequireAuth } from "../middleware/auth.middleware"
 import { validate } from "../middleware/validation.middleware"
+import { type JwtService } from "../services/jwt.service"
 
-export const credentialsRouter = Router()
+export function createCredentialsRouter(jwtService: JwtService): Router {
+	const credentialsRouter = Router()
+	const requireAuth = createRequireAuth(jwtService)
+
+	/**
+	 * @openapi
+	 * /api/credentials/{address}:
+	 *   get:
+	 *     tags: [Credentials]
+	 *     summary: List credentials for a learner address
+	 *     description: Returns all ScholarNFT credentials minted for the provided Stellar address, including revoked items.
+	 *     parameters:
+	 *       - in: path
+	 *         name: address
+	 *         required: true
+	 *         schema:
+	 *           type: string
+	 *         description: Scholar's Stellar wallet address
+	 *     responses:
+	 *       200:
+	 *         description: Credentials fetched successfully
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               properties:
+	 *                 data:
+	 *                   type: array
+	 *                   items:
+	 *                     type: object
+	 *                     properties:
+	 *                       token_id:
+	 *                         type: integer
+	 *                         example: 1
+	 *                       course_id:
+	 *                         type: string
+	 *                         example: "stellar-basics"
+	 *                       metadata_uri:
+	 *                         type: string
+	 *                         nullable: true
+	 *                         example: "ipfs://bafkrei..."
+	 *                       minted_at:
+	 *                         type: string
+	 *                         format: date-time
+	 *                         example: "2026-03-26T10:30:00Z"
+	 *                       revoked:
+	 *                         type: boolean
+	 *                         example: false
+	 *       400:
+	 *         $ref: '#/components/responses/BadRequestError'
+	 *       500:
+	 *         $ref: '#/components/responses/InternalServerError'
+	 */
+	credentialsRouter.get("/credentials/:address", getCredentialsByAddress)
 
 /**
  * @openapi
@@ -118,8 +176,12 @@ export const credentialsRouter = Router()
  */
 credentialsRouter.post(
 	"/credentials/metadata",
+	requireAuth,
 	validate({
 		body: schemas.createCredentialMetadataBodySchema,
 	}),
 	createCredentialMetadata,
 )
+
+	return credentialsRouter
+}

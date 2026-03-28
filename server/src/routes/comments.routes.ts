@@ -11,6 +11,10 @@ import { type JwtService } from "../services/jwt.service"
 export function createCommentsRouter(jwtService: JwtService): Router {
 	const router = Router()
 	const requireAuth = createRequireAuth(jwtService)
+	const maxCommentsPerDay = Number.parseInt(
+		process.env.MAX_COMMENTS_PER_DAY ?? "50",
+		10,
+	)
 
 	/**
 	 * @openapi
@@ -86,6 +90,19 @@ export function createCommentsRouter(jwtService: JwtService): Router {
 			}
 
 			try {
+				const globalSpamCheck = await pool.query(
+					`SELECT COUNT(*) FROM comments
+       WHERE author_address = $1
+       AND created_at > NOW() - INTERVAL '1 day'`,
+					[authorAddress],
+				)
+
+				if (parseInt(globalSpamCheck.rows[0].count) >= maxCommentsPerDay) {
+					return res
+						.status(429)
+						.json({ error: "Global daily comment limit reached" })
+				}
+
 				// Spam protection: max 5 comments per address per proposal per day
 				const spamCheck = await pool.query(
 					`SELECT COUNT(*) FROM comments 
