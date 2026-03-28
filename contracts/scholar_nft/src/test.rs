@@ -164,6 +164,19 @@ fn token_uri_returns_metadata_uri() {
 }
 
 #[test]
+fn get_metadata_uri_round_trip() {
+    let env = Env::default();
+    let (_, _admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+    let uri = cid(&env, "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi");
+
+    env.mock_all_auths();
+    let token_id = client.mint(&scholar, &uri);
+
+    assert_eq!(client.get_metadata_uri(&token_id), uri);
+}
+
+#[test]
 #[should_panic(expected = "Error(Auth, InvalidAction)")]
 fn non_admin_mint_panics() {
     let env = Env::default();

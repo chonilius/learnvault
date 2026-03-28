@@ -197,6 +197,17 @@ impl ScholarNFT {
         }
     }
 
+    pub fn get_metadata_uri(env: Env, token_id: u64) -> String {
+        Self::extend_instance(&env);
+        let key = DataKey::TokenUri(token_id);
+        if let Some(uri) = env.storage().persistent().get::<_, String>(&key) {
+            Self::extend_persistent(&env, &key);
+            uri
+        } else {
+            panic_with_error!(&env, ScholarNFTError::TokenNotFound);
+        }
+    }
+
     pub fn get_metadata(env: Env, token_id: u64) -> ScholarMetadata {
         Self::extend_instance(&env);
         let key = DataKey::Metadata(token_id);
