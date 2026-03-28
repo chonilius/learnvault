@@ -9,8 +9,8 @@ use soroban_sdk::{
 const DAY_IN_LEDGERS: u32 = 17_280;
 const INSTANCE_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
 const INSTANCE_EXTEND_TO: u32 = DAY_IN_LEDGERS * 30;
-const PERSISTENT_BUMP_THRESHOLD: u32 = DAY_IN_LEDGERS;
-const PERSISTENT_EXTEND_TO: u32 = DAY_IN_LEDGERS * 365;
+const TTL_MIN: u32 = DAY_IN_LEDGERS;
+const TTL_MAX: u32 = DAY_IN_LEDGERS * 365;
 
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
 const TOKEN_COUNTER_KEY: Symbol = symbol_short!("TCOUNTER");
@@ -117,9 +117,12 @@ impl ScholarNFT {
         }
 
         env.storage().persistent().set(&owner_key, &to);
+        Self::extend_persistent(&env, &owner_key);
+
         env.storage()
             .persistent()
             .set(&DataKey::TokenUri(token_id), &metadata_uri);
+        Self::extend_persistent(&env, &DataKey::TokenUri(token_id));
 
         let metadata = ScholarMetadata {
             owner: to.clone(),
@@ -129,6 +132,7 @@ impl ScholarNFT {
         env.storage()
             .persistent()
             .set(&DataKey::Metadata(token_id), &metadata);
+        Self::extend_persistent(&env, &DataKey::Metadata(token_id));
 
         env.events().publish(
             (symbol_short!("minted"), token_id),
@@ -186,22 +190,29 @@ impl ScholarNFT {
 }
 
     pub fn token_uri(env: Env, token_id: u64) -> String {
+        Self::extend_instance(&env);
         let key = DataKey::TokenUri(token_id);
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| panic_with_error!(&env, ScholarNFTError::TokenNotFound))
+        if let Some(uri) = env.storage().persistent().get::<_, String>(&key) {
+            Self::extend_persistent(&env, &key);
+            uri
+        } else {
+            panic_with_error!(&env, ScholarNFTError::TokenNotFound);
+        }
     }
 
     pub fn get_metadata(env: Env, token_id: u64) -> ScholarMetadata {
+        Self::extend_instance(&env);
         let key = DataKey::Metadata(token_id);
-        env.storage()
-            .persistent()
-            .get(&key)
-            .unwrap_or_else(|| panic_with_error!(&env, ScholarNFTError::TokenNotFound))
+        if let Some(metadata) = env.storage().persistent().get::<_, ScholarMetadata>(&key) {
+            Self::extend_persistent(&env, &key);
+            metadata
+        } else {
+            panic_with_error!(&env, ScholarNFTError::TokenNotFound);
+        }
     }
 
     pub fn token_counter(env: Env) -> u64 {
+        Self::extend_instance(&env);
         env.storage()
             .instance()
             .get(&TOKEN_COUNTER_KEY)
@@ -234,18 +245,39 @@ impl ScholarNFT {
     }
 
     pub fn has_credential(env: Env, token_id: u64) -> bool {
-        if env.storage().persistent().has(&DataKey::Revoked(token_id)) {
+        Self::extend_instance(&env);
+        let revoked_key = DataKey::Revoked(token_id);
+        if env.storage().persistent().has(&revoked_key) {
+            Self::extend_persistent(&env, &revoked_key);
             return false;
         }
-        env.storage().persistent().has(&DataKey::Owner(token_id))
+        let owner_key = DataKey::Owner(token_id);
+        let exists = env.storage().persistent().has(&owner_key);
+        if exists {
+            Self::extend_persistent(&env, &owner_key);
+        }
+        exists
     }
 
     pub fn is_revoked(env: Env, token_id: u64) -> bool {
-        env.storage().persistent().has(&DataKey::Revoked(token_id))
+        Self::extend_instance(&env);
+        let key = DataKey::Revoked(token_id);
+        let revoked = env.storage().persistent().has(&key);
+        if revoked {
+            Self::extend_persistent(&env, &key);
+        }
+        revoked
     }
 
     pub fn get_revocation_reason(env: Env, token_id: u64) -> Option<String> {
-        env.storage().persistent().get(&DataKey::Revoked(token_id))
+        Self::extend_instance(&env);
+        let key = DataKey::Revoked(token_id);
+        if let Some(reason) = env.storage().persistent().get::<_, String>(&key) {
+            Self::extend_persistent(&env, &key);
+            Some(reason)
+        } else {
+            None
+        }
     }
 
     fn next_token_id(env: &Env) -> u64 {
@@ -260,6 +292,7 @@ impl ScholarNFT {
     }
 
     fn get_admin(env: &Env) -> Address {
+        Self::extend_instance(env);
         env.storage()
             .instance()
             .get::<_, Address>(&ADMIN_KEY)
@@ -275,7 +308,7 @@ impl ScholarNFT {
     fn extend_persistent(env: &Env, key: &DataKey) {
         env.storage()
             .persistent()
-            .extend_ttl(key, PERSISTENT_BUMP_THRESHOLD, PERSISTENT_EXTEND_TO);
+            .extend_ttl(key, TTL_MIN, TTL_MAX);
     }
 }
 

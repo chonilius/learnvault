@@ -1,11 +1,11 @@
 #![cfg(test)]
 
 use crate::{
-    AdminChangedEventData, InitializedEventData, MintEventData, ScholarNFT, ScholarNFTClient,
+    AdminChangedEventData, DataKey, InitializedEventData, MintEventData, ScholarNFT, ScholarNFTClient,
     ScholarNFTError,
 };
 use soroban_sdk::{
-    testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
+    testutils::{storage::Persistent, Address as _, Events as _, MockAuth, MockAuthInvoke},
     Address, Env, IntoVal, String, symbol_short,
 };
 
@@ -373,4 +373,20 @@ fn transfer_attempt_reverts_soulbound() {
 
     let res = client.try_transfer(&from, &to, &token_id);
     assert!(res.is_err());
+}
+
+#[test]
+fn test_mint_extends_ttl() {
+    let env = Env::default();
+    let (contract_id, _admin, client) = setup(&env);
+    let scholar = Address::generate(&env);
+
+    env.mock_all_auths();
+    let token_id = client.mint(&scholar, &cid(&env, "ipfs://ttl-test"));
+
+    env.as_contract(&contract_id, || {
+        assert!(env.storage().persistent().get_ttl(&DataKey::Owner(token_id)) >= 6_307_200);
+        assert!(env.storage().persistent().get_ttl(&DataKey::TokenUri(token_id)) >= 6_307_200);
+        assert!(env.storage().persistent().get_ttl(&DataKey::Metadata(token_id)) >= 6_307_200);
+    });
 }
