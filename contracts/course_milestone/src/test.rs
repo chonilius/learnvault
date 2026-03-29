@@ -8,7 +8,7 @@ use soroban_sdk::{
 
 use crate::{
     CourseConfig, CourseMilestone, CourseMilestoneClient, DataKey, Error, MilestoneCompleted,
-    MilestoneStatus,
+    MilestoneStatus, VerifyBatchEntry,
 };
 
 #[contracttype]
@@ -513,4 +513,138 @@ fn complete_milestone_fails_without_admin_auth() {
     let result = client.try_complete_milestone(&learner, &course_id, &1);
 
     assert!(result.is_err());
+}
+
+// ── batch_verify_milestones ──────────────────────────────────────────────────
+
+fn verify_milestone_helper(
+    env: &Env,
+    contract_id: &Address,
+    admin: &Address,
+    client: &CourseMilestoneClient<'static>,
+    learner: &Address,
+    course_id: &String,
+    milestone_id: u32,
+    tokens: i128,
+) {
+    authorize(
+        env,
+        admin,
+        contract_id,
+        "verify_milestone",
+        (
+            admin.clone(),
+            learner.clone(),
+            course_id.clone(),
+            milestone_id,
+            tokens,
+        ),
+    );
+    client.verify_milestone(admin, learner, course_id, &milestone_id, &tokens);
+}
+
+#[test]
+fn batch_verify_milestones_happy_path() {
+    let (env, contract_id, admin, _token_id, client, token_client) = setup();
+    let learner1 = Address::generate(&env);
+    let learner2 = Address::generate(&env);
+    let course_id = sid(&env, "batch-course");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner1, &client, &course_id);
+    enroll(&env, &contract_id, &learner2, &client, &course_id);
+
+    let uri = sid(&env, "ipfs://evidence");
+    submit_milestone(&env, &contract_id, &learner1, &client, &course_id, 1, &uri);
+    submit_milestone(&env, &contract_id, &learner2, &client, &course_id, 1, &uri);
+
+    let submissions = soroban_sdk::vec![
+        &env,
+        VerifyBatchEntry {
+            learner: learner1.clone(),
+            course_id: course_id.clone(),
+            milestone_id: 1,
+            lrn_reward: 100,
+        },
+        VerifyBatchEntry {
+            learner: learner2.clone(),
+            course_id: course_id.clone(),
+            milestone_id: 1,
+            lrn_reward: 200,
+        },
+    ];
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "batch_verify_milestones",
+        (admin.clone(), submissions.clone()),
+    );
+    client.batch_verify_milestones(&admin, &submissions);
+
+    assert_eq!(
+        client.get_milestone_status(&learner1, &course_id, &1),
+        MilestoneStatus::Approved,
+    );
+    assert_eq!(
+        client.get_milestone_status(&learner2, &course_id, &1),
+        MilestoneStatus::Approved,
+    );
+    assert_eq!(token_client.balance(&learner1), 100);
+    assert_eq!(token_client.balance(&learner2), 200);
+}
+
+#[test]
+fn batch_verify_milestones_reverts_on_invalid_entry() {
+    let (env, contract_id, admin, _token_id, client, token_client) = setup();
+    let learner1 = Address::generate(&env);
+    let not_enrolled = Address::generate(&env);
+    let course_id = sid(&env, "batch-course");
+
+    add_course(&env, &contract_id, &admin, &client, &course_id, 3);
+    enroll(&env, &contract_id, &learner1, &client, &course_id);
+
+    let uri = sid(&env, "ipfs://evidence");
+    submit_milestone(&env, &contract_id, &learner1, &client, &course_id, 1, &uri);
+
+    // Second entry: not_enrolled learner has no enrollment → should cause revert
+    let submissions = soroban_sdk::vec![
+        &env,
+        VerifyBatchEntry {
+            learner: learner1.clone(),
+            course_id: course_id.clone(),
+            milestone_id: 1,
+            lrn_reward: 100,
+        },
+        VerifyBatchEntry {
+            learner: not_enrolled.clone(),
+            course_id: course_id.clone(),
+            milestone_id: 1,
+            lrn_reward: 100,
+        },
+    ];
+
+    authorize(
+        &env,
+        &admin,
+        &contract_id,
+        "batch_verify_milestones",
+        (admin.clone(), submissions.clone()),
+    );
+    let result = client.try_batch_verify_milestones(&admin, &submissions);
+    assert_eq!(
+        result.err(),
+        Some(Ok(soroban_sdk::Error::from_contract_error(
+            Error::NotEnrolled as u32
+        )))
+    );
+
+    // Because the batch reverted, learner1 should NOT be marked approved
+    assert_eq!(
+        client.get_milestone_status(&learner1, &course_id, &1),
+        MilestoneStatus::Pending,
+    );
+    // And no tokens were minted
+    assert_eq!(token_client.balance(&learner1), 0);
 }
