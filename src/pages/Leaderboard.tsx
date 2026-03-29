@@ -4,6 +4,8 @@ import AddressDisplay from "../components/AddressDisplay"
 import { useWallet } from "../hooks/useWallet"
 import { type LeaderboardEntry } from "../util/mockLeaderboardData"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000"
+
 type LeaderboardApiEntry = {
 	rank: number
 	address: string
@@ -23,7 +25,7 @@ const Leaderboard: React.FC = () => {
 		const fetchLeaderboard = async () => {
 			try {
 				const response = await fetch(
-					"http://localhost:4000/api/scholars/leaderboard?page=1&limit=25",
+					`${API_URL}/api/scholars/leaderboard?page=1&limit=25`,
 				)
 				if (!response.ok) throw new Error("Failed to fetch leaderboard")
 				const result = (await response.json()) as {
