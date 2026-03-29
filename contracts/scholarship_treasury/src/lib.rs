@@ -26,6 +26,11 @@ const SCHOLARS_KEY: Symbol = symbol_short!("SCHOLARS");
 const DONORS_KEY: Symbol = symbol_short!("DONORS");
 const PAUSED_KEY: Symbol = symbol_short!("PAUSED");
 const TOTAL_GOV_KEY: Symbol = symbol_short!("TOTALGOV");
+const MIN_LRN_TO_PROPOSE_KEY: Symbol = symbol_short!("MINPROP");
+const GOV_PER_USDC: i128 = 100;
+const PROPOSAL_DEADLINE_LEDGERS: u32 = 100_800;
+/// Minimum quorum in basis points (1 000 bps = 10 % of total GOV supply must vote).
+const MIN_QUORUM_BPS: i128 = 1_000;
 const QUORUM_KEY: Symbol = symbol_short!("QUORUM");
 const APPROVAL_BPS_KEY: Symbol = symbol_short!("APPBPS");
 const GOV_PER_USDC: i128 = 100;
@@ -98,6 +103,13 @@ pub enum Error {
     ProposalNotFound = 6,
     AlreadyVoted = 7,
     VotingClosed = 8,
+    /// Votes cast after the proposal's voting deadline.
+    VotingPeriodEnded = 9,
+    /// finalize_proposal called before the voting deadline has passed.
+    TooEarlyToFinalize = 10,
+    /// Proposal finalized but total votes cast did not reach MIN_QUORUM_BPS.
+    QuorumNotMet = 11,
+    InsufficientReputation = 12,
     VotingNotClosed = 9,
     ProposalAlreadyExecuted = 10,
     ProposalRejected = 11,
@@ -184,6 +196,10 @@ impl ScholarshipTreasury {
         env.storage().instance().set(&SCHOLARS_KEY, &0_u32);
         env.storage().instance().set(&DONORS_KEY, &0_u32);
         env.storage().instance().set(&PAUSED_KEY, &false);
+        env.storage()
+            .instance()
+            .set(&MIN_LRN_TO_PROPOSE_KEY, &0_i128);
+        
         env.storage().instance().set(&QUORUM_KEY, &quorum_threshold);
         env.storage()
             .instance()
@@ -492,6 +508,29 @@ impl ScholarshipTreasury {
         Self::get_balance(env)
     }
 
+    pub fn set_min_lrn_to_propose(env: Env, admin: Address, min_lrn: i128) {
+        Self::assert_initialized(&env);
+
+        admin.require_auth();
+        if admin != Self::admin(&env) {
+            panic_with_error!(&env, Error::NotInitialized);
+        }
+        if min_lrn < 0 {
+            panic_with_error!(&env, Error::InvalidAmount);
+        }
+
+        env.storage()
+            .instance()
+            .set(&MIN_LRN_TO_PROPOSE_KEY, &min_lrn);
+    }
+
+    pub fn get_min_lrn_to_propose(env: Env) -> i128 {
+        env.storage()
+            .instance()
+            .get::<_, i128>(&MIN_LRN_TO_PROPOSE_KEY)
+            .unwrap_or(0)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn submit_proposal(
         env: Env,
@@ -513,6 +552,13 @@ impl ScholarshipTreasury {
 
         applicant.require_auth();
 
+        let gov_contract = Self::governance_contract(&env);
+        let gov_client = governance::client(&env, &gov_contract);
+        let min_lrn_to_propose = Self::get_min_lrn_to_propose(env.clone());
+        if gov_client.balance(&applicant) < min_lrn_to_propose {
+            panic_with_error!(&env, Error::InsufficientReputation);
+        }
+
         let proposal_id = env
             .storage()
             .instance()
@@ -532,6 +578,7 @@ impl ScholarshipTreasury {
             submitted_at: env.ledger().timestamp(),
             yes_votes: 0,
             no_votes: 0,
+            deadline_ledger: env.ledger().sequence() + PROPOSAL_DEADLINE_LEDGERS,
             deadline_ledger: env.ledger().sequence() + 7 * 17_280,
             executed: false,
             cancelled: false,

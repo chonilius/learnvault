@@ -908,6 +908,64 @@ fn submit_proposal_happy_path() {
 }
 
 #[test]
+fn submit_proposal_stores_deadline_from_current_ledger() {
+    let env = Env::default();
+    let (client, _, _donor, _recipient, _token_id, gov_client, admin) = setup_with_admin(&env);
+    let applicant = Address::generate(&env);
+    let (milestone_titles, milestone_dates) = sample_milestones(&env);
+
+    gov_client.mint(&applicant, &250);
+
+    env.mock_all_auths();
+    client.set_min_lrn_to_propose(&admin, &100);
+    env.ledger().set_sequence_number(12_345);
+
+    let proposal_id = client.submit_proposal(
+        &applicant,
+        &750,
+        &String::from_str(&env, "Soroban Fellowship"),
+        &String::from_str(&env, "https://example.com/soroban"),
+        &String::from_str(&env, "Build and ship Soroban contracts"),
+        &String::from_str(&env, "2026-06-01"),
+        &milestone_titles,
+        &milestone_dates,
+    );
+
+    assert_eq!(proposal_id, 1);
+
+    let proposal = client.get_proposal(&proposal_id).unwrap();
+    assert_eq!(proposal.deadline_ledger, 12_345 + 100_800);
+}
+
+#[test]
+fn submit_proposal_fails_when_reputation_is_below_threshold() {
+    let env = Env::default();
+    let (client, _, donor, _recipient, _token_id, _gov_client, admin) = setup_with_admin(&env);
+    let (milestone_titles, milestone_dates) = sample_milestones(&env);
+
+    env.mock_all_auths();
+    client.set_min_lrn_to_propose(&admin, &100);
+
+    let result = client.try_submit_proposal(
+        &donor,
+        &500,
+        &String::from_str(&env, "Scholarship"),
+        &String::from_str(&env, "https://example.com"),
+        &String::from_str(&env, "Description"),
+        &String::from_str(&env, "2026-05-01"),
+        &milestone_titles,
+        &milestone_dates,
+    );
+
+    assert_eq!(
+        result.err(),
+        Some(Ok(soroban_sdk::Error::from_contract_error(
+            Error::InsufficientReputation as u32
+        )))
+    );
+}
+
+#[test]
 fn submit_proposal_zero_amount_fails() {
     let env = Env::default();
     let (client, _, donor, _, _, _) = setup(&env);
