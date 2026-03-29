@@ -1,5 +1,8 @@
 import React, { useState } from "react"
+import { useContractIds } from "../../hooks/useContractIds"
 import { useWallet } from "../../hooks/useWallet"
+import { createScholarshipTreasuryContract } from "../../util/scholarshipTreasury"
+import { isUserRejection, parseError } from "../../utils/errors"
 import { useToast } from "../Toast/ToastProvider"
 
 interface DepositMoreProps {
@@ -12,6 +15,7 @@ export const DepositMore: React.FC<DepositMoreProps> = ({
 	const [amount, setAmount] = useState("")
 	const [isLoading, setIsLoading] = useState(false)
 	const { address, signTransaction } = useWallet()
+	const { scholarshipTreasury } = useContractIds()
 	const { showSuccess, showError, showInfo } = useToast()
 
 	const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,35 +42,49 @@ export const DepositMore: React.FC<DepositMoreProps> = ({
 			return
 		}
 
+		if (!scholarshipTreasury) {
+			showError("Scholarship treasury is not available on this network")
+			return
+		}
+
+		if (!signTransaction) {
+			showError("Wallet does not support signing")
+			return
+		}
+
 		setIsLoading(true)
 		try {
-			// In a real implementation, this would:
-			// 1. Create a transaction to approve USDC transfer
-			// 2. Create a transaction to call treasury deposit
-			// 3. Sign both transactions
-			// 4. Submit to the network
-
-			// For now, simulate the transaction flow
 			const depositAmount = parseFloat(amount)
+			const contract = createScholarshipTreasuryContract(
+				scholarshipTreasury,
+				address,
+			)
 
-			if (!signTransaction) {
-				showError("Wallet does not support signing")
-				setIsLoading(false)
+			showInfo("Waiting for wallet approval...")
+			const txHash = await contract.deposit(
+				address,
+				depositAmount,
+				signTransaction,
+			)
+
+			showSuccess(
+				`Deposit of $${depositAmount.toLocaleString()} USDC submitted!`,
+				txHash || undefined,
+			)
+			setAmount("")
+			onDepositSuccess?.()
+		} catch (error) {
+			if (isUserRejection(error)) {
+				showInfo("Deposit cancelled")
 				return
 			}
 
-			showInfo("Waiting for wallet approval…")
-			// TODO: replace simulated flow with actual contract deposit call
-			showSuccess(
-				`Deposit of $${depositAmount.toLocaleString()} USDC submitted!`,
+			const appError = parseError(error)
+			showError(
+				appError.message && appError.message !== "An unexpected error occurred"
+					? appError.message
+					: "Failed to process deposit. Please try again.",
 			)
-			setAmount("")
-
-			if (onDepositSuccess) {
-				onDepositSuccess()
-			}
-		} catch (_error) {
-			showError("Failed to process deposit. Please try again.")
 		} finally {
 			setIsLoading(false)
 		}
@@ -158,10 +176,11 @@ export const DepositMore: React.FC<DepositMoreProps> = ({
 					</button>
 
 					<p className="text-[10px] text-white/30 text-center mt-6">
-						✓ Deposits are secured on the Stellar blockchain
+						Deposits are secured on the Stellar blockchain
 						<br />
-						✓ You'll receive governance tokens immediately
-						<br />✓ Your funds support eligible scholar proposals
+						You will receive governance tokens immediately
+						<br />
+						Your funds support eligible scholar proposals
 					</p>
 				</div>
 			</form>
