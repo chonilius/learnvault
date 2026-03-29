@@ -460,8 +460,8 @@ impl CourseMilestone {
         env.events().publish(
             (symbol_short!("ms_done"),),
             MilestoneCompleted {
-                learner,
-                course_id,
+                learner: learner.clone(),
+                course_id: course_id.clone(),
                 milestone_id,
                 lrn_reward,
             },
@@ -660,7 +660,7 @@ impl CourseMilestone {
         }
 
         env.events().publish(
-            (symbol_short!("course_done"),),
+            (Symbol::new(env, "course_done"),),
             CourseCompleted {
                 learner: learner.clone(),
                 course_id: course_id.clone(),

@@ -1,9 +1,9 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, String, Val, Vec, contract, contractimpl, contracttype, symbol_short,
+    Address, Env, IntoVal, String, Symbol, Val, Vec, contract, contractimpl, contracttype,
+    symbol_short,
     testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
-    vec,
 };
 
 use crate::{
@@ -340,7 +340,7 @@ fn verify_milestone_emits_course_completed_event_on_final_milestone() {
     let completion_events = events
         .iter()
         .filter(|(_, topics, data)| {
-            topics.contains(&symbol_short!("course_done").into_val(&env)) && {
+            topics.contains(&Symbol::new(&env, "course_done").into_val(&env)) && {
                 let payload: CourseCompleted = data.clone().into_val(&env);
                 payload
                     == CourseCompleted {
