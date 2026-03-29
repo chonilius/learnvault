@@ -1,7 +1,7 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, Symbol, Val, Vec, symbol_short,
+    Address, Env, IntoVal, Symbol, Val, Vec,
     testutils::{Address as _, Events, Ledger, LedgerInfo, MockAuth, MockAuthInvoke},
     token::{StellarAssetClient, TokenClient},
 };
