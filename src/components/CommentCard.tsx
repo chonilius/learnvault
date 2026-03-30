@@ -25,6 +25,12 @@ interface CommentCardProps {
 	onUpdate?: () => void
 }
 
+const API_URL = (
+	(import.meta.env.VITE_API_URL as string | undefined) ??
+	(import.meta.env.VITE_SERVER_URL as string | undefined) ??
+	""
+).replace(/\/$/, "")
+
 const shortenAddress = (address: string) => {
 	if (!address) return ""
 	return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -50,11 +56,15 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		const token = getAuthToken()
 		if (!token) return
 		try {
-			const res = await fetch(`${API_BASE}/api/comments/${comment.id}/vote`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await fetch(
+				`${API_URL}/api/comments/${comment.id}/vote`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ type }),
 				},
 				body: JSON.stringify({ type }),
 			})
@@ -68,10 +78,13 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		const token = getAuthToken()
 		if (!token) return
 		try {
-			const res = await fetch(`${API_BASE}/api/comments/${comment.id}/pin`, {
-				method: "PUT",
-				headers: {
-					Authorization: `Bearer ${token}`,
+			const res = await fetch(
+				`${API_URL}/api/comments/${comment.id}/pin`,
+				{
+					method: "PUT",
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
 				},
 			})
 			if (res.ok) onUpdate?.()
@@ -94,11 +107,19 @@ const CommentCard: React.FC<CommentCardProps> = ({
 		setReplyError(null)
 
 		try {
-			const res = await fetch(`${API_BASE}/api/comments`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await fetch(
+				`${API_URL}/api/comments`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({
+						proposalId: comment.proposal_id,
+						content: replyText,
+						parentId: comment.id,
+					}),
 				},
 				body: JSON.stringify({
 					proposalId: comment.proposal_id,

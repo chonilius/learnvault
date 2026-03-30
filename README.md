@@ -31,10 +31,11 @@
 10. [Tech Stack](#tech-stack)
 11. [Roadmap](#roadmap)
 12. [Whitepaper Generation](#whitepaper-generation)
-13. [Running Tests](#running-tests)
-14. [Contributing](#contributing)
-15. [Resources](#resources)
-16. [Contact](#contact)
+13. [Setup](#setup)
+14. [Running Tests](#running-tests)
+15. [Contributing](#contributing)
+16. [Resources](#resources)
+17. [Contact](#contact)
 
 ---
 
@@ -404,6 +405,27 @@ two-step build process:
 
 ---
 
+## Setup
+
+1. Install dependencies for the frontend and server:
+
+   ```bash
+   npm install
+   cd server && npm install
+   ```
+
+2. Copy the environment templates before starting local services:
+
+   ```bash
+   cp .env.example .env
+   cp server/.env.example server/.env
+   ```
+
+3. Fill in deployed contract IDs, Pinata credentials, and any server secrets you
+   need for your local workflow.
+
+---
+
 ## Running Tests
 
 ### Prerequisites
@@ -425,8 +447,11 @@ two-step build process:
 3. **Configure Environment:**
 
    ```bash
-   # Copy environment template
+   # Copy the root environment template
    cp .env.example .env
+
+   # Copy the server environment template
+   cp server/.env.example server/.env
 
    # Edit .env with your configuration
    # Set STELLAR_SCAFFOLD_ENV=testnet for testnet deployment
@@ -530,6 +555,4 @@ Thanks goes to these wonderful people
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the
-[all-contributors](https://github.com/all-contributors/all-contributors)
-specification. Contributions of any kind welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

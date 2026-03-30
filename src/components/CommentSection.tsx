@@ -23,7 +23,16 @@ interface CommentSectionProps {
 	proposalAuthor?: string
 }
 
-function CommentSection({ proposalId, proposalAuthor }: CommentSectionProps) {
+const API_URL = (
+	(import.meta.env.VITE_API_URL as string | undefined) ??
+	(import.meta.env.VITE_SERVER_URL as string | undefined) ??
+	""
+).replace(/\/$/, "")
+
+const CommentSection: React.FC<CommentSectionProps> = ({
+	proposalId,
+	proposalAuthor,
+}) => {
 	const { t } = useTranslation()
 	const { address } = useWallet()
 	const pollInterval = Number(import.meta.env.VITE_COMMENT_POLL_MS) || 15000
@@ -39,25 +48,20 @@ function CommentSection({ proposalId, proposalAuthor }: CommentSectionProps) {
 	const [submissionError, setSubmissionError] = useState<string | null>(null)
 	const [submissionStatus, setSubmissionStatus] = useState<string | null>(null)
 
-	const fetchComments = useCallback(
-		async (isSilent = false) => {
-			if (!isSilent) setLoading(true)
-			try {
-				const res = await fetch(
-					`${API_BASE}/api/proposals/${proposalId}/comments`,
-				)
-				if (!res.ok) throw new Error("Failed to fetch comments")
-				const data = await res.json()
-				setComments(data)
-				setLastUpdated(new Date())
-			} catch (err) {
-				console.error("Failed to fetch comments", err)
-			} finally {
-				if (!isSilent) setLoading(false)
-			}
-		},
-		[proposalId],
-	)
+	const fetchComments = async () => {
+		setLoading(true)
+		try {
+			const res = await fetch(
+				`${API_URL}/api/proposals/${proposalId}/comments`,
+			)
+			const data = await res.json()
+			setComments(data)
+		} catch (err) {
+			console.error("Failed to fetch comments", err)
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	useEffect(() => {
 		let isMounted = true
@@ -92,11 +96,19 @@ function CommentSection({ proposalId, proposalAuthor }: CommentSectionProps) {
 		setSubmissionStatus(null)
 
 		try {
-			const res = await fetch(`${API_BASE}/api/comments`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await fetch(
+				`${API_URL}/api/comments`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({
+						proposalId,
+						content: newComment,
+						parentId,
+					}),
 				},
 				body: JSON.stringify({
 					proposalId,
