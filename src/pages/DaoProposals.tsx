@@ -3,6 +3,8 @@ import { Helmet } from "react-helmet"
 import { useSearchParams } from "react-router-dom"
 import CommentSection from "../components/CommentSection"
 import Pagination from "../components/Pagination"
+import { NoProposalsEmptyState } from "../components/SkeletonLoader"
+import { ErrorState } from "../components/states/errorState"
 import {
 	type ProposalRecord,
 	useProposal,
@@ -61,6 +63,8 @@ const DaoProposals: React.FC = () => {
 		isVoting,
 		walletAddress,
 		isLoading,
+		error,
+		refetch,
 	} = useProposals()
 
 	const proposalParam = searchParams.get("proposal")
@@ -206,6 +210,25 @@ const DaoProposals: React.FC = () => {
 			<div className="p-12 max-w-5xl mx-auto text-center h-[60vh] flex flex-col items-center justify-center">
 				<div className="w-12 h-12 border-4 border-brand-cyan/20 border-t-brand-cyan rounded-full animate-spin mb-4" />
 				<p className="text-white/60 font-medium">Loading proposals...</p>
+			</div>
+		)
+	}
+
+	if (error) {
+		return (
+			<div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
+				<ErrorState
+					message={(error as Error).message || String(error)}
+					onRetry={() => void refetch()}
+				/>
+			</div>
+		)
+	}
+
+	if (proposals.length === 0) {
+		return (
+			<div className="p-12 max-w-5xl mx-auto text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
+				<NoProposalsEmptyState />
 			</div>
 		)
 	}
