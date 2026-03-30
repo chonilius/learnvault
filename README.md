@@ -435,6 +435,18 @@ npm run test:contracts   # alias for the above
 npm run test:watch       # re-runs tests on file changes
 ```
 
+### Lint and Format Contracts
+
+Before submitting a PR, ensure Rust contracts pass formatting and lint checks:
+
+```bash
+cargo fmt --all               # auto-format all contracts
+cargo fmt --all -- --check    # check formatting without modifying files (used in CI)
+cargo clippy --workspace -- -D warnings  # lint all contracts (warnings are errors)
+```
+
+Formatting rules are defined in `.rustfmt.toml` at the repo root (`edition = "2024"`, `max_width = 100`).
+
 ---
 
 ## Contributing
