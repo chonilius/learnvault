@@ -15,6 +15,7 @@ import { initDb } from "./db/index"
 import { createNonceStore } from "./db/nonce-store"
 import { errorHandler } from "./middleware/error.middleware"
 import { globalLimiter } from "./middleware/rate-limit.middleware"
+import { requestLogger } from "./middleware/request-logger.middleware"
 import { buildOpenApiSpec } from "./openapi"
 import { adminMilestonesRouter } from "./routes/admin-milestones.routes"
 import { adminRouter } from "./routes/admin.routes"
@@ -93,8 +94,11 @@ if (!jwtPrivateKey || !jwtPublicKey) {
 	jwtPublicKey = ephemeral.publicKeyPem
 }
 
-process.env.JWT_PRIVATE_KEY = jwtPrivateKey
-process.env.JWT_PUBLIC_KEY = jwtPublicKey
+if (!jwtPrivateKey || !jwtPublicKey) {
+	throw new Error(
+		"JWT_PRIVATE_KEY and JWT_PUBLIC_KEY must be configured to start the server",
+	)
+}
 
 const nonceStore = createNonceStore(env.REDIS_URL)
 const jwtService = createJwtService(jwtPrivateKey, jwtPublicKey)
@@ -105,7 +109,7 @@ const openApiSpec = buildOpenApiSpec()
 const openApiYaml = YAML.stringify(openApiSpec)
 
 app.set("trust proxy", 1)
-app.use(morgan("dev"))
+app.use(requestLogger)
 app.use(
 	cors({
 		origin: (origin, callback) => {
