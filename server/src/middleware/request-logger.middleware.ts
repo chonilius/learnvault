@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto"
-import type { NextFunction, Request, Response } from "express"
+import { type NextFunction, type Request, type Response } from "express"
 
 type LogPayload = {
 	requestId: string
@@ -24,9 +24,7 @@ const jsonLogger: Logger = {
 	},
 }
 
-export function createRequestLogger(
-	options: RequestLoggerOptions = {},
-) {
+export function createRequestLogger(options: RequestLoggerOptions = {}) {
 	const enabled = options.enabled ?? process.env.NODE_ENV !== "test"
 	const logger = options.logger ?? jsonLogger
 

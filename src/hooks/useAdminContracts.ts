@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useContractIds } from "./useContractIds"
-import { useWallet } from "./useWallet"
 import {
 	getCourseMilestoneState,
 	getScholarshipTreasuryState,
 	invokeContractMethod,
 	type AdminManagedContractState,
 } from "../util/sorobanAdmin"
+import { useContractIds } from "./useContractIds"
+import { useWallet } from "./useWallet"
 
 export interface ContractRegistryEntry {
 	key: string
@@ -78,9 +78,9 @@ export function useAdminContracts() {
 			const [scholarshipTreasuryState, courseMilestoneState] =
 				await Promise.all([
 					contractIds.scholarshipTreasury
-						? getScholarshipTreasuryState(contractIds.scholarshipTreasury).catch(
-								() => null,
-							)
+						? getScholarshipTreasuryState(
+								contractIds.scholarshipTreasury,
+							).catch(() => null)
 						: Promise.resolve(null),
 					contractIds.courseMilestone
 						? getCourseMilestoneState(contractIds.courseMilestone).catch(

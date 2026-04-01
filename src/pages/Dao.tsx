@@ -14,8 +14,8 @@ export default function Dao() {
 					DAO Governance
 				</h1>
 				<p className="text-white/40 text-lg font-medium max-w-2xl mx-auto">
-					Browse live proposals, vote with your governance tokens, and shape
-					the future of LearnVault.
+					Browse live proposals, vote with your governance tokens, and shape the
+					future of LearnVault.
 				</p>
 			</header>
 

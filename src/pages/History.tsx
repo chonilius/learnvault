@@ -187,7 +187,8 @@ const History: React.FC = () => {
 					Activity History
 				</h1>
 				<p className="text-white/50 mt-2">
-					Recent on-chain actions for {address.slice(0, 6)}...{address.slice(-4)}
+					Recent on-chain actions for {address.slice(0, 6)}...
+					{address.slice(-4)}
 				</p>
 			</header>
 

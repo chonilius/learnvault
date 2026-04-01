@@ -25,9 +25,7 @@ export async function listMilestones(
 	res: Response,
 ): Promise<void> {
 	const page =
-		typeof req.query.page === "string"
-			? Number.parseInt(req.query.page, 10)
-			: 1
+		typeof req.query.page === "string" ? Number.parseInt(req.query.page, 10) : 1
 	const pageSize =
 		typeof req.query.pageSize === "string"
 			? Number.parseInt(req.query.pageSize, 10)

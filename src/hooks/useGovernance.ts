@@ -1,12 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
+import { type Proposal } from "../types/contracts"
 import { ErrorCode, createAppError } from "../types/errors"
-import type { RawContractProposal } from "../types/governance"
-import type { Proposal } from "../types/contracts"
-import { type Proposal, type RawContractProposal } from "../types/governance"
-import { logger } from "../utils/logger"
+import { type RawContractProposal, type Proposal } from "../types/governance"
 import { isUserRejection, parseError } from "../utils/errors"
+import { logger } from "../utils/logger"
 import { useContractIds } from "./useContractIds"
 import { useWallet } from "./useWallet"
 
@@ -78,38 +77,45 @@ export function useGovernance() {
 
 	const toProposalStatus = useCallback(
 		(status: unknown): Proposal["status"] => {
-				const normalized = String(status ?? "pending").toLowerCase()
-				if (normalized === "approved" || normalized === "passed") return "approved"
-				if (normalized === "rejected") return "rejected"
-				return "pending"
-			},
+			const normalized = String(status ?? "pending").toLowerCase()
+			if (normalized === "approved" || normalized === "passed")
+				return "approved"
+			if (normalized === "rejected") return "rejected"
+			return "pending"
+		},
 		[],
 	)
 
 	const mapProposal = useCallback(
 		(
-				rawProposal: RawContractProposal,
-				fallbackStatus: Proposal["status"],
-			): Proposal => ({
-				id: Number(rawProposal.id ?? 0),
-				proposer: String(
-					rawProposal.applicant ??
-						rawProposal.author ??
-						rawProposal.author_address ??
-						"",
-				),
-				amount: toBigIntSafe(rawProposal.amount ?? 0),
-				description: String(
-					rawProposal.program_description ?? rawProposal.description ?? "",
-				),
-				votes_for: toBigIntSafe(
-					rawProposal.yes_votes ?? rawProposal.votes_for ?? rawProposal.votesFor ?? 0,
-				),
-				votes_against: toBigIntSafe(
-					rawProposal.no_votes ?? rawProposal.votes_against ?? rawProposal.votesAgainst ?? 0,
-				),
-				status: toProposalStatus(rawProposal.status ?? fallbackStatus),
-			}),
+			rawProposal: RawContractProposal,
+			fallbackStatus: Proposal["status"],
+		): Proposal => ({
+			id: Number(rawProposal.id ?? 0),
+			proposer: String(
+				rawProposal.applicant ??
+					rawProposal.author ??
+					rawProposal.author_address ??
+					"",
+			),
+			amount: toBigIntSafe(rawProposal.amount ?? 0),
+			description: String(
+				rawProposal.program_description ?? rawProposal.description ?? "",
+			),
+			votes_for: toBigIntSafe(
+				rawProposal.yes_votes ??
+					rawProposal.votes_for ??
+					rawProposal.votesFor ??
+					0,
+			),
+			votes_against: toBigIntSafe(
+				rawProposal.no_votes ??
+					rawProposal.votes_against ??
+					rawProposal.votesAgainst ??
+					0,
+			),
+			status: toProposalStatus(rawProposal.status ?? fallbackStatus),
+		}),
 		[toBigIntSafe, toProposalStatus],
 	)
 
@@ -397,8 +403,7 @@ export function useGovernance() {
 	useQuery({
 		queryKey: ["governance", "voted", address],
 		queryFn: async () => {
-			if (!address || !scholarshipTreasury || proposals.length === 0)
-				return {}
+			if (!address || !scholarshipTreasury || proposals.length === 0) return {}
 			const client = await loadClient("../contracts/scholarship_treasury")
 			if (!client) return {}
 
@@ -464,8 +469,7 @@ export function useGovernance() {
 			support: boolean
 		}) => {
 			if (!address) throw new Error("Wallet not connected")
-			if (!scholarshipTreasury)
-				throw new Error("Contract not configured")
+			if (!scholarshipTreasury) throw new Error("Contract not configured")
 
 			const client = await loadClient("../contracts/scholarship_treasury")
 			if (!client) throw new Error("Contract client not found")

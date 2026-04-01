@@ -1,13 +1,16 @@
 import React, { useMemo } from "react"
 import { Helmet } from "react-helmet"
-import { EmptyState, DashboardStatsSkeleton } from "../components/SkeletonLoader"
+import {
+	EmptyState,
+	DashboardStatsSkeleton,
+} from "../components/SkeletonLoader"
 import { ErrorState } from "../components/states/errorState"
-import TxHashLink from "../components/TxHashLink"
-import { useTreasury } from "../hooks/useTreasury"
 import TreasuryHealthChart, {
 	type TreasuryPoint,
 } from "../components/treasury/TreasuryHealthChart"
+import TxHashLink from "../components/TxHashLink"
 import { useContractIds } from "../hooks/useContractIds"
+import { useTreasury } from "../hooks/useTreasury"
 import { useUSDC } from "../hooks/useUSDC"
 
 const API_BASE = import.meta.env.VITE_SERVER_URL || "http://localhost:4000"
@@ -85,13 +88,7 @@ const Treasury: React.FC = () => {
 	const { balance: treasuryUSDC, isLoading: treasuryLoading } =
 		useUSDC(scholarshipTreasury)
 
-	const {
-		stats,
-		activity,
-		isLoading,
-		isError,
-		refetch,
-	} = useTreasury()
+	const { stats, activity, isLoading, isError, refetch } = useTreasury()
 
 	const activityLoading = isLoading
 	const statsLoading = isLoading

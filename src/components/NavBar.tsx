@@ -2,8 +2,8 @@ import { useEffect, useId, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
 import { ReputationBadge } from "./ReputationBadge"
-import { WalletButton } from "./WalletButton"
 import { ThemeToggle } from "./ThemeToggle"
+import { WalletButton } from "./WalletButton"
 
 export default function NavBar() {
 	const [menuOpen, setMenuOpen] = useState(false)
@@ -46,7 +46,10 @@ export default function NavBar() {
 					</span>
 				</NavLink>
 
-				<nav aria-label="Primary" className="hidden md:flex items-center gap-2 lg:gap-6">
+				<nav
+					aria-label="Primary"
+					className="hidden md:flex items-center gap-2 lg:gap-6"
+				>
 					{navLinks.map(({ to, label }) => (
 						<NavLink
 							key={to}
@@ -66,7 +69,7 @@ export default function NavBar() {
 
 				<div className="flex items-center gap-3 md:gap-4">
 					<ThemeToggle />
-					
+
 					<ReputationBadge
 						className="hidden lg:inline-flex shrink-0"
 						size="sm"

@@ -475,7 +475,8 @@ cargo fmt --all -- --check    # check formatting without modifying files (used i
 cargo clippy --workspace -- -D warnings  # lint all contracts (warnings are errors)
 ```
 
-Formatting rules are defined in `.rustfmt.toml` at the repo root (`edition = "2024"`, `max_width = 100`).
+Formatting rules are defined in `.rustfmt.toml` at the repo root
+(`edition = "2024"`, `max_width = 100`).
 
 ---
 
@@ -555,4 +556,6 @@ Thanks goes to these wonderful people
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+This project follows the
+[all-contributors](https://github.com/all-contributors/all-contributors)
+specification. Contributions of any kind welcome!

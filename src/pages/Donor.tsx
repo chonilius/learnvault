@@ -132,10 +132,7 @@ const Donor: React.FC = () => {
 					totalContributed={Number(stats.total_contributed) / 1e7}
 				/>
 
-				<GovernancePower
-					balance={stats.votes_cast}
-					percentage={0}
-				/>
+				<GovernancePower balance={stats.votes_cast} percentage={0} />
 
 				<ActiveVotes votes={votes} />
 

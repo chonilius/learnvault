@@ -393,10 +393,8 @@ const CourseManagement: React.FC = () => {
 }
 
 const MilestoneQueue: React.FC = () => {
-	const {
-		data: courseOptionsData = [],
-		error: courseOptionsError,
-	} = useAdminCoursesList()
+	const { data: courseOptionsData = [], error: courseOptionsError } =
+		useAdminCoursesList()
 	const {
 		milestones,
 		total,
@@ -802,14 +800,13 @@ const UserLookup: React.FC = () => {
 
 const TreasuryControls: React.FC = () => {
 	const { address } = useWallet()
+	const { data, isLoading, error, refetch } = useAdminContracts()
 	const {
-		data,
-		isLoading,
-		error,
-		refetch,
-	} = useAdminContracts()
-	const { pauseTreasury, unpauseTreasury, isPending, error: actionError } =
-		useTreasuryPauseControl()
+		pauseTreasury,
+		unpauseTreasury,
+		isPending,
+		error: actionError,
+	} = useTreasuryPauseControl()
 	const [lastTxHash, setLastTxHash] = useState<string | null>(null)
 	const treasuryState = data?.scholarshipTreasuryState
 	const queryError = error instanceof Error ? error.message : null
@@ -915,8 +912,8 @@ const TreasuryControls: React.FC = () => {
 
 				{address && treasuryState?.adminAddress && !connectedAdmin && (
 					<p className="text-xs text-yellow-400 mt-3">
-						Connected wallet {renderAddress(address)} does not match the on-chain
-						treasury admin {renderAddress(treasuryState.adminAddress)}.
+						Connected wallet {renderAddress(address)} does not match the
+						on-chain treasury admin {renderAddress(treasuryState.adminAddress)}.
 					</p>
 				)}
 

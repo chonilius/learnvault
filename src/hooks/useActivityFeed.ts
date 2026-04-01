@@ -168,17 +168,24 @@ export function useActivityFeed(
 	filter: ActivityEventFilter = "all",
 ) {
 	const [displayCount, setDisplayCount] = useState(limit)
-	const { learnToken, courseMilestone, scholarNft, governanceToken, milestoneEscrow } = useContractIds()
+	const {
+		learnToken,
+		courseMilestone,
+		scholarNft,
+		governanceToken,
+		milestoneEscrow,
+	} = useContractIds()
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["activity-feed", address, filter],
-		queryFn: () => fetchActivityEvents(address, 100, filter, {
-			learnToken,
-			courseMilestone,
-			scholarNft,
-			governanceToken,
-			milestoneEscrow,
-		}),
+		queryFn: () =>
+			fetchActivityEvents(address, 100, filter, {
+				learnToken,
+				courseMilestone,
+				scholarNft,
+				governanceToken,
+				milestoneEscrow,
+			}),
 		enabled: true,
 		staleTime: 30_000,
 		refetchInterval: 60_000,

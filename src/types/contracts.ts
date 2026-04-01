@@ -10,7 +10,6 @@
 // Canonical on-chain / shared contract types (as requested)
 // ---------------------------------------------------------------------------
 
-
 export interface MilestoneReport {
 	id: string
 	learner_address: string
@@ -44,7 +43,10 @@ export type { Proposal, RawContractProposal } from "./governance"
 // ---------------------------------------------------------------------------
 // Milestone types (on-chain CourseMilestone)
 // ---------------------------------------------------------------------------
-export type { MilestoneReportFormValues, SubmittedMilestoneReport } from "./milestone"
+export type {
+	MilestoneReportFormValues,
+	SubmittedMilestoneReport,
+} from "./milestone"
 
 // ---------------------------------------------------------------------------
 // Existing app-specific helper types kept for backward compatibility with
@@ -96,4 +98,3 @@ export interface RpcEvent {
 	topics?: unknown[]
 	value?: unknown
 }
-

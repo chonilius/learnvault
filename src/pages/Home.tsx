@@ -80,8 +80,8 @@ const Home: React.FC = () => {
 						The community is the bank.
 					</h1>
 					<p className="text-xl md:text-2xl text-white/50 mb-12 max-w-2xl mx-auto font-medium leading-relaxed animate-in slide-in-from-bottom-12 duration-1000 delay-400">
-						Earn on-chain credentials by completing courses. Get funded by a DAO that believes in
-						your potential.
+						Earn on-chain credentials by completing courses. Get funded by a DAO
+						that believes in your potential.
 					</p>
 					<div className="flex flex-wrap justify-center gap-6 animate-in slide-in-from-bottom-12 duration-1000 delay-600">
 						<Link
@@ -104,7 +104,9 @@ const Home: React.FC = () => {
 					{STATS.map(({ label, value }) => (
 						<div key={label} className="text-center">
 							<p className="text-4xl font-black text-brand-cyan">{value}</p>
-							<p className="text-sm text-white/40 uppercase tracking-widest mt-1">{label}</p>
+							<p className="text-sm text-white/40 uppercase tracking-widest mt-1">
+								{label}
+							</p>
 						</div>
 					))}
 				</div>
@@ -148,9 +150,12 @@ const Home: React.FC = () => {
 										{enrolledCourses.map((course) => (
 											<div key={course.courseId}>
 												<div className="flex items-center justify-between mb-2">
-													<span className="font-semibold text-white/80">{course.title}</span>
+													<span className="font-semibold text-white/80">
+														{course.title}
+													</span>
 													<span className="text-sm text-white/40">
-														{course.completedCount}/{course.totalCount} milestones
+														{course.completedCount}/{course.totalCount}{" "}
+														milestones
 													</span>
 												</div>
 												<div className="w-full h-2 bg-white/10 rounded-full mb-4">
@@ -162,7 +167,9 @@ const Home: React.FC = () => {
 												<DeferredSection
 													fallback={<SectionSkeleton className="min-h-40" />}
 												>
-													<Suspense fallback={<SectionSkeleton className="min-h-40" />}>
+													<Suspense
+														fallback={<SectionSkeleton className="min-h-40" />}
+													>
 														<MilestoneTracker
 															courseId={course.courseId}
 															milestones={course.milestones}
@@ -198,12 +205,17 @@ const Home: React.FC = () => {
 
 					{/* CTA banner */}
 					<div className="glass-card p-10 rounded-[3rem] border border-brand-cyan/20 text-center shadow-2xl">
-						<h2 className="text-3xl font-black mb-4">Join the open-source sprint</h2>
+						<h2 className="text-3xl font-black mb-4">
+							Join the open-source sprint
+						</h2>
 						<p className="text-white/40 mb-6 max-w-xl mx-auto">
-							LearnVault is built in the open. Pick an issue, ship a feature, and earn your place
-							in the contributor list.
+							LearnVault is built in the open. Pick an issue, ship a feature,
+							and earn your place in the contributor list.
 						</p>
-						<Link to="https://github.com/bakeronchain/learnvault/issues" target="_blank">
+						<Link
+							to="https://github.com/bakeronchain/learnvault/issues"
+							target="_blank"
+						>
 							<Button variant="secondary" size="lg">
 								View Open Issues
 								<Icon.ArrowUpRight size="md" />
