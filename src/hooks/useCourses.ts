@@ -130,10 +130,15 @@ async function fetchJson<T>(url: string): Promise<T> {
 	})
 
 	if (!response.ok) {
-		const error = await response.json().catch(() => ({}))
-		throw new Error(
-			(error as { error?: string }).error || `Request failed for ${url}`,
-		)
+		// Avoid trying to parse HTML error pages (dev server 404s etc.) as JSON
+		const contentType = response.headers.get("content-type") ?? ""
+		if (contentType.includes("application/json")) {
+			const error = await response.json().catch(() => ({}))
+			throw new Error(
+				(error as { error?: string }).error || `Request failed for ${url}`,
+			)
+		}
+		throw new Error(`Request failed for ${url} (${response.status})`)
 	}
 
 	return response.json() as Promise<T>

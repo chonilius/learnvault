@@ -155,7 +155,7 @@ app.use("/api", treasuryRouter)
 
 // Start event poller (non-prod only for now)
 if (process.env.NODE_ENV !== "production") {
-	void import("./workers/event-poller.js").then(({ startEventPoller }) => {
+	void import("./workers/event-poller").then(({ startEventPoller }) => {
 		void startEventPoller().catch(console.error)
 	})
 }
@@ -183,7 +183,7 @@ initDb()
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
-	void import("./workers/event-poller.js").then(({ stopEventPoller }) => {
+	void import("./workers/event-poller").then(({ stopEventPoller }) => {
 		void stopEventPoller()
 	})
 	process.exit(0)

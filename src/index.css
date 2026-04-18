@@ -95,36 +95,35 @@ body {
 }
 
 /* ── Iridescent border ────────────────────────────────────────────────────── */
+/*
+ * Uses a gradient background with padding to simulate an animated border.
+ * The inner content background is set by each element using bg-[--color-app-bg]
+ * or a dark bg. Safe to use on <a>, <button>, <div> etc.
+ */
 .iridescent-border {
-	background: linear-gradient(135deg, #00d2ff, #3a7bd5, #8e2de2, #00ff80);
-	background-size: 300% 300%;
+	background:
+		linear-gradient(var(--color-app-bg), var(--color-app-bg)) padding-box,
+		linear-gradient(135deg, #00d2ff, #3a7bd5, #8e2de2, #00ff80, #00d2ff)
+			border-box;
+	background-size:
+		auto,
+		300% 300%;
 	animation: iridescent 4s ease infinite;
-	padding: 2px;
-	border-radius: inherit;
-	position: relative;
-}
-
-.iridescent-border::before {
-	content: "";
-	position: absolute;
-	inset: 2px;
-	border-radius: inherit;
-	background: var(--color-app-bg);
-	z-index: 0;
-}
-
-.iridescent-border > * {
-	position: relative;
-	z-index: 1;
+	border: 2px solid transparent;
+	color: var(--color-app-text);
 }
 
 @keyframes iridescent {
 	0%,
 	100% {
-		background-position: 0% 50%;
+		background-position:
+			0px 0px,
+			0% 50%;
 	}
 	50% {
-		background-position: 100% 50%;
+		background-position:
+			0px 0px,
+			100% 50%;
 	}
 }
 
@@ -242,4 +241,92 @@ body {
 	.shadow-glow-cyan {
 		box-shadow: 0 0 20px rgba(0, 210, 255, 0.15);
 	}
+}
+
+/* ── Light mode text / background overrides ──────────────────────────────── */
+/*
+ * All page components use dark-mode Tailwind classes (text-white, text-white/40
+ * bg-white/5, etc.) without dark: prefix. These overrides make those classes
+ * readable when the user switches to light mode.
+ */
+.sds-theme-light *,
+.light * {
+	--tw-text-opacity: 1;
+}
+
+/* Remap white text to dark text in light mode */
+.sds-theme-light .text-white,
+.light .text-white {
+	color: #0f172a !important;
+}
+
+.sds-theme-light [class*="text-white/"],
+.light [class*="text-white/"] {
+	color: rgba(15, 23, 42, 0.7) !important;
+}
+
+/* White backgrounds become subtle grey in light mode */
+.sds-theme-light [class*="bg-white/"],
+.light [class*="bg-white/"] {
+	background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Border white becomes visible in light mode */
+.sds-theme-light [class*="border-white/"],
+.light [class*="border-white/"] {
+	border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Placeholder text */
+.sds-theme-light [class*="placeholder-white"],
+.light [class*="placeholder-white"] {
+	--tw-placeholder-opacity: 0.4;
+	color: rgba(15, 23, 42, 0.4) !important;
+}
+
+/* Textarea/input backgrounds */
+.sds-theme-light textarea,
+.sds-theme-light input,
+.light textarea,
+.light input {
+	background-color: rgba(15, 23, 42, 0.04);
+	color: #0f172a;
+	border-color: rgba(15, 23, 42, 0.15);
+}
+
+/* Glass in light mode — lighter background */
+.sds-theme-light .glass,
+.sds-theme-light .glass-card,
+.light .glass,
+.light .glass-card {
+	background: rgba(255, 255, 255, 0.75) !important;
+	border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Iridescent border fill in light mode */
+.sds-theme-light .iridescent-border,
+.light .iridescent-border {
+	background:
+		linear-gradient(#ffffff, #ffffff) padding-box,
+		linear-gradient(135deg, #00d2ff, #3a7bd5, #8e2de2, #00ff80, #00d2ff)
+			border-box;
+}
+
+/* Dark absolute backgrounds like bg-[#05070a] become white */
+.sds-theme-light [style*="background: #05070a"],
+.light [style*="background: #05070a"],
+.sds-theme-light [style*="background-color: #05070a"],
+.light [style*="background-color: #05070a"] {
+	background-color: #ffffff !important;
+}
+
+/* Scrollbar in light mode */
+.sds-theme-light ::-webkit-scrollbar-thumb,
+.light ::-webkit-scrollbar-thumb {
+	background: rgba(15, 23, 42, 0.15);
+}
+
+.sds-theme-light ::-webkit-scrollbar-thumb:hover,
+.light ::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 150, 210, 0.4);
 }

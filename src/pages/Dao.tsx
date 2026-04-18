@@ -56,7 +56,7 @@ export default function Dao() {
 					className="iridescent-border px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
 					data-testid="view-proposals"
 				>
-					<span className="relative z-10">View Proposals</span>
+					View Proposals
 				</Link>
 				<Link
 					to="/dao/propose"
@@ -73,7 +73,7 @@ export default function Dao() {
 
 			{/* Recent proposals */}
 			<section>
-				<h2 className="text-2xl font-black mb-8 tracking-tight">
+				<h2 className="text-2xl font-black mb-8 tracking-tight text-center">
 					Recent Proposals
 				</h2>
 				{isLoading ? (

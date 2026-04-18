@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../components/Toast/ToastProvider"
+import { WalletButton } from "../components/WalletButton"
 import { useProposals } from "../hooks/useProposals"
 import { useWallet } from "../hooks/useWallet"
 
@@ -61,7 +62,13 @@ const isNonEmpty = (value: string): boolean => value.trim().length > 0
 const DaoPropose: React.FC = () => {
 	const { address } = useWallet()
 	const navigate = useNavigate()
-	const { createProposal, isSubmittingProposal, votingPower } = useProposals()
+	const {
+		createProposal,
+		isSubmittingProposal,
+		votingPower,
+		isLoadingVotingPower,
+		isVotingPowerError,
+	} = useProposals()
 	const { showError } = useToast()
 	const [activeTab, setActiveTab] = useState<"edit" | "preview">("edit")
 	const [submissionError, setSubmissionError] = useState<string | null>(null)
@@ -72,7 +79,11 @@ const DaoPropose: React.FC = () => {
 	const [createdTxHash, setCreatedTxHash] = useState<string | null>(null)
 	const [formData, setFormData] = useState<FormData>(initialFormData)
 
-	const hasMinimumBalance = votingPower >= MINIMUM_PROPOSAL_TOKENS
+	// Allow form access while loading or when the voting power API is unreachable
+	const hasMinimumBalance =
+		isLoadingVotingPower ||
+		isVotingPowerError ||
+		votingPower >= MINIMUM_PROPOSAL_TOKENS
 
 	const requestedAmount = useMemo(() => {
 		if (formData.type === "scholarship" && formData.fundingAmount.trim()) {
@@ -181,7 +192,7 @@ const DaoPropose: React.FC = () => {
 		if (submissionError) setSubmissionError(null)
 	}
 
-	const handleSubmit = async (event: React.FormEvent) => {
+	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
 		if (!address || !hasMinimumBalance) return
 
@@ -463,30 +474,44 @@ const DaoPropose: React.FC = () => {
 
 	if (!address) {
 		return (
-			<div className="min-h-screen flex items-center justify-center text-white">
-				<div className="text-center">
-					<h1 className="text-4xl font-black mb-4">Connect Your Wallet</h1>
-					<p className="text-white/60 mb-8">
-						You need to connect your wallet to create a proposal.
-					</p>
+			<div className="flex items-center justify-center py-32 text-white">
+				<div className="glass-card p-12 rounded-3xl border border-white/8 text-center max-w-md w-full flex flex-col items-center gap-6">
+					<span className="text-5xl">🔐</span>
+					<div>
+						<h1 className="text-2xl font-black mb-2">Connect Your Wallet</h1>
+						<p className="text-white/50 text-sm leading-relaxed">
+							You need to connect your wallet to create a governance proposal.
+						</p>
+					</div>
+					<WalletButton />
 				</div>
 			</div>
 		)
 	}
 
-	if (!hasMinimumBalance) {
+	if (!isLoadingVotingPower && !isVotingPowerError && !hasMinimumBalance) {
 		return (
-			<div className="min-h-screen flex items-center justify-center text-white">
-				<div className="glass-card p-12 rounded-[3rem] border border-white/5 text-center max-w-md">
-					<h1 className="text-4xl font-black mb-4">
-						Insufficient Governance Tokens
-					</h1>
-					<p className="text-white/60 mb-6">
-						You need at least {MINIMUM_PROPOSAL_TOKENS.toString()} governance
-						tokens to create a proposal.
-					</p>
-					<div className="text-brand-cyan text-2xl font-bold mb-8">
-						Current Balance: {votingPower.toString()} GOV
+			<div className="flex items-center justify-center py-32 text-white">
+				<div className="glass-card p-12 rounded-3xl border border-white/8 text-center max-w-md w-full flex flex-col items-center gap-6">
+					<span className="text-5xl">⚖️</span>
+					<div>
+						<h1 className="text-2xl font-black mb-2">
+							Insufficient Governance Tokens
+						</h1>
+						<p className="text-white/50 text-sm leading-relaxed mb-4">
+							You need at least{" "}
+							<span className="text-brand-cyan font-bold">
+								{MINIMUM_PROPOSAL_TOKENS.toString()} GOV
+							</span>{" "}
+							to create a proposal. Complete courses to earn LRN and governance
+							tokens.
+						</p>
+						<p className="text-sm text-white/30">
+							Your balance:{" "}
+							<span className="text-white/60 font-bold">
+								{votingPower.toString()} GOV
+							</span>
+						</p>
 					</div>
 				</div>
 			</div>
@@ -695,8 +720,7 @@ const DaoPropose: React.FC = () => {
 								disabled={
 									isSubmittingProposal ||
 									!formData.title.trim() ||
-									!formData.description.trim() ||
-									!hasMinimumBalance
+									!formData.description.trim()
 								}
 								className="px-8 py-3 bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-black uppercase tracking-widest rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
 							>

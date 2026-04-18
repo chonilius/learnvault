@@ -78,6 +78,11 @@ export default defineConfig({
 				target: "http://localhost:8000/friendbot",
 				changeOrigin: true,
 			},
+			"/api": {
+				target: "http://localhost:8000",
+				changeOrigin: true,
+				// Don't rewrite /api prefix — backend expects it
+			},
 		},
 	},
 })

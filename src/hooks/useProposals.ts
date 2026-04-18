@@ -249,6 +249,7 @@ export function useProposals() {
 		refetch: proposalsQuery.refetch,
 		votingPower: votingPowerQuery.data ?? 0n,
 		isLoadingVotingPower: votingPowerQuery.isLoading,
+		isVotingPowerError: votingPowerQuery.isError,
 		createProposal: createProposalMutation.mutateAsync,
 		isSubmittingProposal: createProposalMutation.isPending,
 		castVote: castVoteMutation.mutateAsync,
