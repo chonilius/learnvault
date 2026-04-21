@@ -400,25 +400,26 @@ proptest! {
         amount in 1..100_000_000_i128,
         tranches in 1..100_u32
     ) {
-        let (env, contract_id, _, _, _, scholar) = setup();
+        let (env, contract_id, token, _, treasury, scholar) = setup();
         let client = MilestoneEscrowClient::new(&env, &contract_id);
-        
+
         if amount / (tranches as i128) == 0 {
             return Ok(());
         }
 
+        // setup() only mints 1_000; top up so the treasury can fund this escrow
+        env.mock_all_auths();
+        stellar_asset_client(&env, &token).mint(&treasury, &amount);
+
         create_escrow(&client, 100, &scholar, amount, tranches);
-        
+
         for _ in 0..tranches {
-            let res = release_tranche_authorized(&client, 100);
-            if res.is_err() {
-                break;
-            }
+            release_tranche_authorized(&client, 100).unwrap();
         }
-        
+
         let escrow = client.get_escrow(&100).unwrap();
         assert!(escrow.released_amount <= escrow.total_amount);
-        
+
         // Try one more, should fail with AllTranchesReleased
         let over_release = release_tranche_authorized(&client, 100);
         assert_eq!(
