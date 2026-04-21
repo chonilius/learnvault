@@ -428,6 +428,8 @@ proptest! {
             )))
         );
     }
+}
+
 #[test]
 fn reclaim_inactive_when_fully_released_is_rejected() {
     let (env, contract_id, _token, _admin, _treasury, scholar) = setup();

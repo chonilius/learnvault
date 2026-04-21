@@ -243,6 +243,8 @@ proptest! {
             assert_eq!(client.total_supply(), amount_i128);
         }
     }
+}
+
 #[test]
 fn get_version_returns_semver() {
     let e = Env::default();
