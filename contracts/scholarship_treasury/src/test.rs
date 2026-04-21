@@ -1523,19 +1523,19 @@ proptest! {
         let env = Env::default();
         let (client, _, donor, _, _, gov_client) = setup(&env);
         let (milestone_titles, milestone_dates) = sample_milestones(&env);
-        
+
         let voter = Address::generate(&env);
         gov_client.mint(&voter, &500);
 
         env.mock_all_auths();
-        
+
         // create one valid proposal
         client.submit_proposal(
             &donor, &500, &String::from_str(&env, "Test"), &String::from_str(&env, "URL"), &String::from_str(&env, "Desc"), &String::from_str(&env, "Date"), &milestone_titles, &milestone_dates,
         );
 
         let result = client.try_vote(&voter, &proposal_id, &true);
-        
+
         if proposal_id == 1 {
             assert!(result.is_ok());
         } else {

@@ -370,18 +370,18 @@ proptest! {
     ) {
         let (env, contract_id, _, _, _, scholar) = setup();
         let client = MilestoneEscrowClient::new(&env, &contract_id);
-        
+
         let start_time = START_TS + last_active_offset;
         set_timestamp(&env, start_time);
-        
+
         create_escrow(&client, 99, &scholar, 1000, 2);
-        
-        // Advance time 
+
+        // Advance time
         let current_time = start_time + check_time_offset;
         set_timestamp(&env, current_time);
-        
+
         let result = reclaim_inactive_authorized(&client, 99);
-        
+
         if check_time_offset >= THIRTY_DAYS {
             assert!(result.is_ok());
         } else {

@@ -221,13 +221,13 @@ proptest! {
         let e = Env::default();
         let (_, _, client) = setup(&e);
         let learner = Address::generate(&e);
-        
+
         // The contract expects i128. Let's safely cast u128 to i128 or trap.
         // If it's outside i128 max, it might cast to a negative number or we can just cap it / wrap it.
         let amount_i128 = amount as i128;
-        
+
         let result = client.try_mint(&learner, &amount_i128);
-        
+
         if amount_i128 <= 0 {
             // Must return ZeroAmount error
             assert_eq!(
