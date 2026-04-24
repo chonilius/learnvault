@@ -287,10 +287,10 @@ export async function createGovernanceProposal(
 		}
 
 		// 1. Call the on-chain contract first
-		const contractResult = await stellarContractService.submitScholarshipProposal(
-			params,
-			{ requestId: req.requestId },
-		)
+		const contractResult =
+			await stellarContractService.submitScholarshipProposal(params, {
+				requestId: req.requestId,
+			})
 
 		// 2. Only write to DB if contract call succeeded
 		const dbResult = await pool.query(
@@ -406,11 +406,14 @@ export async function castVote(req: Request, res: Response): Promise<void> {
 		}
 
 		// 5. Call the on-chain vote contract
-		const contractResult = await stellarContractService.castVote({
-			voter: voter_address,
-			proposalId: proposal_id,
-			support,
-		}, { requestId: req.requestId })
+		const contractResult = await stellarContractService.castVote(
+			{
+				voter: voter_address,
+				proposalId: proposal_id,
+				support,
+			},
+			{ requestId: req.requestId },
+		)
 
 		// 6. Write to DB after successful contract call
 		const votingPower = balanceBigInt

@@ -8,6 +8,7 @@ import { ToastProvider } from "./components/Toast/ToastProvider"
 import { WalletToastWatcher } from "./components/WalletToastWatcher"
 
 const Admin = lazy(() => import("./pages/Admin"))
+const Community = lazy(() => import("./pages/Community"))
 const Courses = lazy(() => import("./pages/Courses"))
 const Credential = lazy(() => import("./pages/Credential"))
 const Dao = lazy(() => import("./pages/Dao"))
@@ -54,6 +55,7 @@ function App() {
 					/>
 					<Route path="/dao/propose" element={renderRoute(<DaoPropose />)} />
 					<Route path="/leaderboard" element={renderRoute(<Leaderboard />)} />
+					<Route path="/community" element={renderRoute(<Community />)} />
 					<Route path="/history" element={renderRoute(<History />)} />
 					<Route path="/profile" element={renderRoute(<Profile />)} />
 					<Route
@@ -111,4 +113,5 @@ const AppLayout = () => (
 		<Footer />
 	</div>
 )
+
 export default App

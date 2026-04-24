@@ -79,7 +79,9 @@ function writeState(state: LearningTimeState): void {
 	window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
 
-function stopActiveSessionIfAny(state: LearningTimeState): StopSessionResult | null {
+function stopActiveSessionIfAny(
+	state: LearningTimeState,
+): StopSessionResult | null {
 	const active = state.activeSession
 	if (!active) return null
 
@@ -121,7 +123,11 @@ export function startLessonSession(
 
 	const key = toLessonKey(courseId, lessonId)
 	const existing = state.lessons[key]
-	if (existing && typeof estimatedMinutes === "number" && estimatedMinutes > 0) {
+	if (
+		existing &&
+		typeof estimatedMinutes === "number" &&
+		estimatedMinutes > 0
+	) {
 		state.lessons[key] = { ...existing, estimatedMinutes }
 	}
 
@@ -198,7 +204,9 @@ export function getLearningTimeSummary(): {
 } {
 	const state = readState()
 	const lessons = Object.values(state.lessons)
-	const totalLessonsCompleted = lessons.filter((lesson) => lesson.completedAt).length
+	const totalLessonsCompleted = lessons.filter(
+		(lesson) => lesson.completedAt,
+	).length
 
 	return {
 		totalSeconds: state.totalSeconds,

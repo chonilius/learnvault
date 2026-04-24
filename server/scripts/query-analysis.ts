@@ -48,7 +48,10 @@ const queries: Array<{ name: string; sql: string; params: unknown[] }> = [
 		      FROM milestone_reports
 		      WHERE scholar_address = $1 AND status = $2
 		      ORDER BY submitted_at DESC`,
-		params: ["GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "pending"],
+		params: [
+			"GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"pending",
+		],
 	},
 	{
 		name: "Latest audit decision per report",
@@ -140,7 +143,9 @@ async function main(): Promise<void> {
 				}
 				lines.push("```")
 			} catch (err) {
-				lines.push("> Explain unavailable for this query in current environment.")
+				lines.push(
+					"> Explain unavailable for this query in current environment.",
+				)
 				lines.push(`> Error: ${String(err)}`)
 			}
 
@@ -171,7 +176,9 @@ async function main(): Promise<void> {
 		} catch {
 			lines.push("## pg_stat_statements Top 10")
 			lines.push("")
-			lines.push("> pg_stat_statements is not enabled on this PostgreSQL instance.")
+			lines.push(
+				"> pg_stat_statements is not enabled on this PostgreSQL instance.",
+			)
 			lines.push("")
 		}
 

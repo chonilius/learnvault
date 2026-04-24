@@ -13,8 +13,8 @@ import {
 import { ErrorState } from "../components/states/errorState"
 import { useScholarCredentials } from "../hooks/useScholarCredentials"
 import { WalletContext } from "../providers/WalletProvider"
-import { shortenAddress } from "../util/scholarshipApplications"
 import { formatDuration, getLearningTimeSummary } from "../util/learningTime"
+import { shortenAddress } from "../util/scholarshipApplications"
 
 type UserNft = {
 	id: string

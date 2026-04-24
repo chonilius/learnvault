@@ -5,9 +5,10 @@ const intervalMs = Number.parseInt(
 	process.env.ESCROW_TIMEOUT_CRON_INTERVAL_MS || "",
 	10,
 )
-const pollEveryMs = Number.isFinite(intervalMs) && intervalMs > 0
-	? intervalMs
-	: DEFAULT_INTERVAL_MS
+const pollEveryMs =
+	Number.isFinite(intervalMs) && intervalMs > 0
+		? intervalMs
+		: DEFAULT_INTERVAL_MS
 
 let timer: NodeJS.Timeout | null = null
 

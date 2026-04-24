@@ -36,7 +36,10 @@ function toDate(value: Date | string): Date {
 	return value instanceof Date ? value : new Date(value)
 }
 
-function computeDaysRemaining(lastActivityAt: Date, windowDays: number): number {
+function computeDaysRemaining(
+	lastActivityAt: Date,
+	windowDays: number,
+): number {
 	const deadline = lastActivityAt.getTime() + windowDays * DAY_MS
 	return Math.ceil((deadline - Date.now()) / DAY_MS)
 }
@@ -50,11 +53,16 @@ function toStatus(row: EscrowTimeoutRow): EscrowTimeoutStatus {
 		proposalId: row.proposal_id,
 		scholarAddress: row.scholar_address,
 		courseId: row.course_id,
-		daysRemaining: computeDaysRemaining(lastActivity, row.inactivity_window_days),
+		daysRemaining: computeDaysRemaining(
+			lastActivity,
+			row.inactivity_window_days,
+		),
 		inactivityWindowDays: row.inactivity_window_days,
 		lastActivityAt: lastActivity.toISOString(),
 		deadlineAt: deadline.toISOString(),
-		reminderSentAt: row.reminder_sent_at ? toDate(row.reminder_sent_at).toISOString() : null,
+		reminderSentAt: row.reminder_sent_at
+			? toDate(row.reminder_sent_at).toISOString()
+			: null,
 		status: row.status,
 	}
 }
@@ -69,7 +77,9 @@ async function insertPlatformEvent(
 	)
 }
 
-async function notifyEscrowTimeoutWarning(row: EscrowTimeoutRow): Promise<void> {
+async function notifyEscrowTimeoutWarning(
+	row: EscrowTimeoutRow,
+): Promise<void> {
 	const status = toStatus(row)
 	const milestoneUrl = `${process.env.FRONTEND_URL || ""}/dashboard`
 
@@ -225,10 +235,7 @@ export async function processEscrowTimeouts(): Promise<void> {
 			}
 
 			const alreadyReminded = Boolean(row.reminder_sent_at)
-			if (
-				status.daysRemaining <= REMINDER_THRESHOLD_DAYS &&
-				!alreadyReminded
-			) {
+			if (status.daysRemaining <= REMINDER_THRESHOLD_DAYS && !alreadyReminded) {
 				await notifyEscrowTimeoutWarning(row)
 				await pool.query(
 					`UPDATE escrow_timeouts

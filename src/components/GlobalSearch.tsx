@@ -1,8 +1,8 @@
+import { Icon } from "@stellar/design-system"
 import React, { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useCourses } from "../hooks/useCourses"
 import { useWikiPages } from "../hooks/useWiki"
-import { Icon } from "@stellar/design-system"
 
 const GlobalSearch: React.FC = () => {
 	const [query, setQuery] = useState("")
@@ -10,23 +10,45 @@ const GlobalSearch: React.FC = () => {
 	const navigate = useNavigate()
 	const containerRef = useRef<HTMLDivElement>(null)
 
-	const { data: courses = [] } = useCourses()
+	const { courses = [] } = useCourses()
 	const { data: wikiPages = [] } = useWikiPages()
 
-	const results = query.length >= 2 ? [
-		...courses.filter(c => 
-			c.title.toLowerCase().includes(query.toLowerCase()) || 
-			c.description.toLowerCase().includes(query.toLowerCase())
-		).map(c => ({ id: `course-${c.courseId}`, title: c.title, category: "Course", link: `/courses` })),
-		...wikiPages.filter(p => 
-			p.title.toLowerCase().includes(query.toLowerCase()) || 
-			p.content.toLowerCase().includes(query.toLowerCase())
-		).map(p => ({ id: `wiki-${p.id}`, title: p.title, category: "Wiki", link: `/wiki/${p.slug}` }))
-	].slice(0, 8) : []
+	const results =
+		query.length >= 2
+			? [
+					...courses
+						.filter(
+							(c) =>
+								c.title.toLowerCase().includes(query.toLowerCase()) ||
+								c.description.toLowerCase().includes(query.toLowerCase()),
+						)
+						.map((c) => ({
+							id: `course-${c.id}`,
+							title: c.title,
+							category: "Course",
+							link: `/courses`,
+						})),
+					...wikiPages
+						.filter(
+							(p) =>
+								p.title.toLowerCase().includes(query.toLowerCase()) ||
+								p.content.toLowerCase().includes(query.toLowerCase()),
+						)
+						.map((p) => ({
+							id: `wiki-${p.id}`,
+							title: p.title,
+							category: "Wiki",
+							link: `/wiki/${p.slug}`,
+						})),
+				].slice(0, 8)
+			: []
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(event.target as Node)
+			) {
 				setIsOpen(false)
 			}
 		}
@@ -37,13 +59,16 @@ const GlobalSearch: React.FC = () => {
 	const handleSelect = (link: string) => {
 		setQuery("")
 		setIsOpen(false)
-		navigate(link)
+		void navigate(link)
 	}
 
 	return (
 		<div className="relative" ref={containerRef}>
 			<div className="relative group">
-				<Icon.SearchMd className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-brand-cyan transition-colors" size="sm" />
+				<Icon.SearchMd
+					className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-brand-cyan transition-colors"
+					size="sm"
+				/>
 				<input
 					type="text"
 					placeholder="Search..."
@@ -61,7 +86,7 @@ const GlobalSearch: React.FC = () => {
 				<div className="absolute top-full mt-2 left-0 right-0 glass-card border border-white/10 rounded-2xl overflow-hidden shadow-2xl min-w-[300px] animate-in fade-in slide-in-from-top-2 duration-200">
 					{results.length > 0 ? (
 						<div className="flex flex-col">
-							{results.map(result => (
+							{results.map((result) => (
 								<button
 									key={result.id}
 									onClick={() => handleSelect(result.link)}

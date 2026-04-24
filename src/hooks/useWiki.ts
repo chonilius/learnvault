@@ -79,7 +79,8 @@ export function useUpdateWikiPage() {
 		},
 		onSuccess: (_, { slug }) => {
 			void queryClient.invalidateQueries({ queryKey: ["wiki-pages"] })
-			if (slug) void queryClient.invalidateQueries({ queryKey: ["wiki-page", slug] })
+			if (slug)
+				void queryClient.invalidateQueries({ queryKey: ["wiki-page", slug] })
 		},
 	})
 }

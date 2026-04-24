@@ -8,7 +8,6 @@ import { LessonListSkeleton } from "../components/skeletons/LessonListSkeleton"
 import { useCourse } from "../hooks/useCourse"
 import { useCourseDetail } from "../hooks/useCourses"
 import { useWallet } from "../hooks/useWallet"
-import { connectWallet } from "../util/wallet"
 import {
 	completeLessonSession,
 	formatDuration,
@@ -16,6 +15,7 @@ import {
 	startLessonSession,
 	stopLessonSession,
 } from "../util/learningTime"
+import { connectWallet } from "../util/wallet"
 import NotFound from "./NotFound"
 
 const loadingLesson = {
@@ -25,6 +25,7 @@ const loadingLesson = {
 	content: "",
 	order: 0,
 	isMilestone: false,
+	estimatedMinutes: 0,
 }
 
 const LessonView: React.FC = () => {
@@ -47,6 +48,12 @@ const LessonView: React.FC = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 	const [timeSpentLabel, setTimeSpentLabel] = useState<string | null>(null)
 
+	const lesson = useMemo(
+		() => course?.lessons.find((candidate) => candidate.id === lessonId),
+		[course, lessonId],
+	)
+	const allLessons = useMemo(() => course?.lessons ?? [], [course])
+
 	useEffect(() => {
 		// Simulate a short content load delay
 		setIsLoadingContent(true)
@@ -55,14 +62,25 @@ const LessonView: React.FC = () => {
 	}, [lessonId])
 
 	useEffect(() => {
+		if (!course || !lesson) return
+
+		startLessonSession(course.slug, lesson.id, lesson.estimatedMinutes)
+		const existing = getLessonTime(course.slug, lesson.id)
+		setTimeSpentLabel(
+			existing ? formatDuration(existing.secondsSpent) : formatDuration(0),
+		)
+
+		return () => {
+			const stopped = stopLessonSession(course.slug, lesson.id)
+			if (stopped) {
+				setTimeSpentLabel(formatDuration(stopped.lesson.secondsSpent))
+			}
+		}
+	}, [course, lesson])
+
+	useEffect(() => {
 		setIsSidebarOpen(false)
 	}, [lessonId])
-
-	const lesson = useMemo(
-		() => course?.lessons.find((candidate) => candidate.id === lessonId),
-		[course, lessonId],
-	)
-	const allLessons = useMemo(() => course?.lessons ?? [], [course])
 
 	if (!isLoadingCourse && (courseError || !course || !lesson)) {
 		return <NotFound />
@@ -166,23 +184,6 @@ const LessonView: React.FC = () => {
 			: null
 
 	const isNextLocked = !isCompleted
-
-	useEffect(() => {
-		if (!course || !lesson) return
-
-		startLessonSession(course.slug, lesson.id, lesson.estimatedMinutes)
-		const existing = getLessonTime(course.slug, lesson.id)
-		setTimeSpentLabel(
-			existing ? formatDuration(existing.secondsSpent) : formatDuration(0),
-		)
-
-		return () => {
-			const stopped = stopLessonSession(course.slug, lesson.id)
-			if (stopped) {
-				setTimeSpentLabel(formatDuration(stopped.lesson.secondsSpent))
-			}
-		}
-	}, [course, lesson])
 
 	const handleMarkComplete = async () => {
 		if (!courseId || !course || !lesson) return

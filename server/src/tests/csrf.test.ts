@@ -205,9 +205,8 @@ describe("CSRF posture — bearer-only auth model", () => {
 		it("does not gate GETs on Referer (reads are not state-changing)", async () => {
 			// Even with an untrusted Referer, a GET passes — the middleware
 			// short-circuits on non-state-changing methods.
-			const { createRequireTrustedOrigin: make } = await import(
-				"../middleware/csrf.middleware"
-			)
+			const { createRequireTrustedOrigin: make } =
+				await import("../middleware/csrf.middleware")
 			const mw = make(ALLOWED_ORIGINS)
 			const req = {
 				method: "GET",

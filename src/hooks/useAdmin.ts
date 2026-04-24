@@ -1,9 +1,5 @@
 import { useCallback, useRef, useState } from "react"
-import {
-	apiFetchJson,
-	buildApiUrl,
-	createAuthHeaders,
-} from "../lib/api"
+import { apiFetchJson, buildApiUrl, createAuthHeaders } from "../lib/api"
 
 export interface AdminStats {
 	pendingMilestones: number
@@ -207,59 +203,62 @@ export function useAdminMilestones() {
 	const approveMilestone = useCallback(
 		async (id: string): Promise<boolean> => {
 			setError(null)
-		try {
-			await apiFetchJson(`/api/admin/milestones/${id}/approve`, {
-				method: "POST",
-				auth: true,
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({}),
-			})
+			try {
+				await apiFetchJson(`/api/admin/milestones/${id}/approve`, {
+					method: "POST",
+					auth: true,
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({}),
+				})
 				await refreshMilestones()
-			return true
-		} catch (err: unknown) {
-			setMilestones((prev) =>
-				prev.map((m) => (m.id === id ? { ...m, status: "pending" } : m)),
-			)
-			setError(err instanceof Error ? err.message : "Approval failed")
-			return false
-		}
+				return true
+			} catch (err: unknown) {
+				setMilestones((prev) =>
+					prev.map((m) => (m.id === id ? { ...m, status: "pending" } : m)),
+				)
+				setError(err instanceof Error ? err.message : "Approval failed")
+				return false
+			}
 		},
 		[refreshMilestones],
 	)
 
-	const rejectMilestone = useCallback(async (id: string): Promise<boolean> => {
-		setMilestones((prev) =>
-			prev.map((m) => (m.id === id ? { ...m, status: "rejected" } : m)),
-		)
-		try {
-			await apiFetchJson(`/api/admin/milestones/${id}/reject`, {
-				method: "POST",
-				auth: true,
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					reason: "Rejected from the admin panel",
-				}),
-			})
-				await refreshMilestones()
-			return true
-		} catch (err: unknown) {
+	const rejectMilestone = useCallback(
+		async (id: string): Promise<boolean> => {
 			setMilestones((prev) =>
-				prev.map((m) => (m.id === id ? { ...m, status: "pending" } : m)),
+				prev.map((m) => (m.id === id ? { ...m, status: "rejected" } : m)),
 			)
-			setError(err instanceof Error ? err.message : "Rejection failed")
-			return false
-		}
+			try {
+				await apiFetchJson(`/api/admin/milestones/${id}/reject`, {
+					method: "POST",
+					auth: true,
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						reason: "Rejected from the admin panel",
+					}),
+				})
+				await refreshMilestones()
+				return true
+			} catch (err: unknown) {
+				setMilestones((prev) =>
+					prev.map((m) => (m.id === id ? { ...m, status: "pending" } : m)),
+				)
+				setError(err instanceof Error ? err.message : "Rejection failed")
+				return false
+			}
 		},
 		[refreshMilestones],
 	)
 
 	const runBatchMilestones = useCallback(
 		async (
-			path: "/api/admin/milestones/batch-approve" | "/api/admin/milestones/batch-reject",
+			path:
+				| "/api/admin/milestones/batch-approve"
+				| "/api/admin/milestones/batch-reject",
 			body: { milestoneIds: number[]; reason?: string },
 		): Promise<BatchMilestoneResponse | null> => {
 			setError(null)
@@ -272,8 +271,9 @@ export function useAdminMilestones() {
 				body: JSON.stringify(body),
 			})
 
-			const payload =
-				(await response.json().catch(() => ({}))) as BatchMilestoneResponseApi
+			const payload = (await response
+				.json()
+				.catch(() => ({}))) as BatchMilestoneResponseApi
 
 			if (!payload.data) {
 				const message = payload.error || `Request failed for ${path}`

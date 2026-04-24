@@ -91,7 +91,10 @@ async function verifyConstraints(client: PoolClient): Promise<void> {
 		   AND column_name = 'estimated_minutes'`,
 		[schemaName],
 	)
-	assert(notNullResult.rows[0]?.is_nullable === "NO", "lessons.estimated_minutes must be NOT NULL")
+	assert(
+		notNullResult.rows[0]?.is_nullable === "NO",
+		"lessons.estimated_minutes must be NOT NULL",
+	)
 
 	const uniqueResult = await client.query(
 		`SELECT 1
@@ -104,7 +107,10 @@ async function verifyConstraints(client: PoolClient): Promise<void> {
 		   AND pg_get_constraintdef(c.oid) ILIKE '%(learner_address, course_id)%'`,
 		[schemaName],
 	)
-	assert(uniqueResult.rows.length > 0, "Expected UNIQUE(learner_address, course_id) on enrollments")
+	assert(
+		uniqueResult.rows.length > 0,
+		"Expected UNIQUE(learner_address, course_id) on enrollments",
+	)
 
 	const fkResult = await client.query(
 		`SELECT 1
@@ -117,7 +123,10 @@ async function verifyConstraints(client: PoolClient): Promise<void> {
 		   AND pg_get_constraintdef(c.oid) ILIKE '%REFERENCES courses(id)%'`,
 		[schemaName],
 	)
-	assert(fkResult.rows.length > 0, "Expected lessons.course_id foreign key to courses(id)")
+	assert(
+		fkResult.rows.length > 0,
+		"Expected lessons.course_id foreign key to courses(id)",
+	)
 
 	console.log("  constraints validated")
 }
@@ -163,7 +172,10 @@ async function verifyRollbackReachedCleanSchema(
 		[schemaName],
 	)
 	const tableCount = Number(result.rows[0]?.count ?? 0)
-	assert(tableCount === 0, `Expected empty schema after full rollback, found ${tableCount} table(s)`)
+	assert(
+		tableCount === 0,
+		`Expected empty schema after full rollback, found ${tableCount} table(s)`,
+	)
 	console.log("  rollback validated (schema clean)")
 }
 
