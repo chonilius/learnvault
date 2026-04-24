@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 import React, { useEffect, useMemo, useState } from "react"
+import ReactMarkdown from "react-markdown"
 import { useNavigate } from "react-router-dom"
 import TxHashLink from "../components/TxHashLink"
 import {
 	useAdminStats,
 	useAdminMilestones,
+	type BatchMilestoneResponse,
 	type MilestoneSubmission,
 } from "../hooks/useAdmin"
 import {
@@ -12,9 +14,6 @@ import {
 	useTreasuryPauseControl,
 } from "../hooks/useAdminContracts"
 import { useWallet } from "../hooks/useWallet"
-import { apiFetchJson } from "../lib/api"
-import { getAuthToken } from "../util/auth"
-import { shortenContractId } from "../util/contract"
 import {
 	useWikiPages,
 	useCreateWikiPage,
@@ -22,7 +21,9 @@ import {
 	useDeleteWikiPage,
 	type WikiPage,
 } from "../hooks/useWiki"
-import ReactMarkdown from "react-markdown"
+import { apiFetchJson } from "../lib/api"
+import { getAuthToken } from "../util/auth"
+import { shortenContractId } from "../util/contract"
 
 type AdminSection =
 	| "courses"
@@ -275,7 +276,14 @@ const Admin: React.FC = () => {
 			<aside className="w-72 glass border-r border-white/5 p-8 flex flex-col gap-8">
 				<nav className="flex flex-col gap-2">
 					{(
-						["courses", "milestones", "users", "wiki", "treasury", "contracts"] as const
+						[
+							"courses",
+							"milestones",
+							"users",
+							"wiki",
+							"treasury",
+							"contracts",
+						] as const
 					).map((section) => (
 						<button
 							key={section}
@@ -452,6 +460,82 @@ const MilestoneQueue: React.FC = () => {
 			await approveMilestone(milestone.id)
 		} else {
 			await rejectMilestone(milestone.id)
+		}
+	}
+
+	const pendingMilestones = milestones.filter(
+		(milestone) => milestone.status === "pending",
+	)
+	const allPendingOnPageSelected =
+		pendingMilestones.length > 0 &&
+		pendingMilestones.every((milestone) =>
+			selectedMilestoneIds.includes(milestone.id),
+		)
+	const selectedCount = selectedMilestoneIds.length
+
+	const toggleMilestoneSelection = (milestoneId: string) => {
+		setSelectedMilestoneIds((prev) =>
+			prev.includes(milestoneId)
+				? prev.filter((id) => id !== milestoneId)
+				: [...prev, milestoneId],
+		)
+	}
+
+	const toggleSelectAllPending = () => {
+		setSelectedMilestoneIds((prev) => {
+			if (allPendingOnPageSelected) {
+				return prev.filter(
+					(id) => !pendingMilestones.some((milestone) => milestone.id === id),
+				)
+			}
+
+			const nextIds = new Set(prev)
+			pendingMilestones.forEach((milestone) => nextIds.add(milestone.id))
+			return Array.from(nextIds)
+		})
+	}
+
+	const runBatchAction = async (action: "approve" | "reject") => {
+		if (selectedMilestoneIds.length === 0) return
+
+		const ids = [...selectedMilestoneIds]
+		setBatchState({
+			action,
+			total: ids.length,
+			inProgress: true,
+			results: null,
+		})
+
+		try {
+			const result =
+				action === "approve"
+					? await batchApproveMilestones(ids)
+					: await batchRejectMilestones(ids)
+
+			setBatchState({
+				action,
+				total: ids.length,
+				inProgress: false,
+				results: result,
+			})
+
+			if (result?.results.length) {
+				const succeededIds = new Set(
+					result.results
+						.filter((item) => item.success)
+						.map((item) => item.reportId),
+				)
+				setSelectedMilestoneIds((prev) =>
+					prev.filter((id) => !succeededIds.has(id)),
+				)
+			}
+		} catch {
+			setBatchState({
+				action,
+				total: ids.length,
+				inProgress: false,
+				results: null,
+			})
 		}
 	}
 
@@ -1107,8 +1191,6 @@ const ContractInfo: React.FC = () => {
 	)
 }
 
-
-
 const WikiManagement: React.FC = () => {
 	const { data: pages = [], isLoading } = useWikiPages()
 	const createMutation = useCreateWikiPage()
@@ -1300,7 +1382,9 @@ const WikiManagement: React.FC = () => {
 											</span>
 										)}
 									</div>
-									<p className="text-xs text-white/30 mt-1">/wiki/{page.slug}</p>
+									<p className="text-xs text-white/30 mt-1">
+										/wiki/{page.slug}
+									</p>
 								</div>
 								<div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
 									<button

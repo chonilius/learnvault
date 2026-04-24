@@ -23,10 +23,14 @@ const toWikiPage = (row: WikiPageRow) => ({
 	updatedAt: row.updated_at,
 })
 
-export const getWikiPages = async (req: Request, res: Response): Promise<void> => {
+export const getWikiPages = async (
+	req: Request,
+	res: Response,
+): Promise<void> => {
 	try {
 		const includeUnpublished = req.query.includeUnpublished === "true"
-		const category = typeof req.query.category === "string" ? req.query.category : undefined
+		const category =
+			typeof req.query.category === "string" ? req.query.category : undefined
 
 		const conditions: string[] = []
 		const params: unknown[] = []
@@ -40,10 +44,11 @@ export const getWikiPages = async (req: Request, res: Response): Promise<void> =
 			conditions.push(`category = $${params.length}`)
 		}
 
-		const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""
+		const whereClause =
+			conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""
 		const result = await pool.query(
 			`SELECT * FROM wiki_pages ${whereClause} ORDER BY category, title ASC`,
-			params
+			params,
 		)
 
 		res.status(200).json(result.rows.map(toWikiPage))
@@ -53,12 +58,15 @@ export const getWikiPages = async (req: Request, res: Response): Promise<void> =
 	}
 }
 
-export const getWikiPageBySlug = async (req: Request, res: Response): Promise<void> => {
+export const getWikiPageBySlug = async (
+	req: Request,
+	res: Response,
+): Promise<void> => {
 	try {
 		const { slug } = req.params
 		const result = await pool.query(
 			"SELECT * FROM wiki_pages WHERE slug = $1 LIMIT 1",
-			[slug]
+			[slug],
 		)
 
 		if (result.rowCount === 0) {
@@ -73,7 +81,10 @@ export const getWikiPageBySlug = async (req: Request, res: Response): Promise<vo
 	}
 }
 
-export const createWikiPage = async (req: Request, res: Response): Promise<void> => {
+export const createWikiPage = async (
+	req: Request,
+	res: Response,
+): Promise<void> => {
 	try {
 		const { title, slug, content, category, isPublished } = req.body
 
@@ -86,7 +97,7 @@ export const createWikiPage = async (req: Request, res: Response): Promise<void>
 			`INSERT INTO wiki_pages (title, slug, content, category, is_published)
 			 VALUES ($1, $2, $3, $4, $5)
 			 RETURNING *`,
-			[title, slug, content, category, isPublished !== false]
+			[title, slug, content, category, isPublished !== false],
 		)
 
 		res.status(201).json(toWikiPage(result.rows[0]))
@@ -100,7 +111,10 @@ export const createWikiPage = async (req: Request, res: Response): Promise<void>
 	}
 }
 
-export const updateWikiPage = async (req: Request, res: Response): Promise<void> => {
+export const updateWikiPage = async (
+	req: Request,
+	res: Response,
+): Promise<void> => {
 	try {
 		const { id } = req.params
 		const { title, slug, content, category, isPublished } = req.body
@@ -115,7 +129,7 @@ export const updateWikiPage = async (req: Request, res: Response): Promise<void>
 			     updated_at = CURRENT_TIMESTAMP
 			 WHERE id = $6
 			 RETURNING *`,
-			[title, slug, content, category, isPublished, id]
+			[title, slug, content, category, isPublished, id],
 		)
 
 		if (result.rowCount === 0) {
@@ -134,10 +148,15 @@ export const updateWikiPage = async (req: Request, res: Response): Promise<void>
 	}
 }
 
-export const deleteWikiPage = async (req: Request, res: Response): Promise<void> => {
+export const deleteWikiPage = async (
+	req: Request,
+	res: Response,
+): Promise<void> => {
 	try {
 		const { id } = req.params
-		const result = await pool.query("DELETE FROM wiki_pages WHERE id = $1", [id])
+		const result = await pool.query("DELETE FROM wiki_pages WHERE id = $1", [
+			id,
+		])
 
 		if (result.rowCount === 0) {
 			res.status(404).json({ error: "Wiki page not found" })

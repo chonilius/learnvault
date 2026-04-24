@@ -1,16 +1,18 @@
+import { Icon } from "@stellar/design-system"
 import React from "react"
 import { Helmet } from "react-helmet"
-import { useParams, Link } from "react-router-dom"
 import ReactMarkdown from "react-markdown"
+import { useParams, Link } from "react-router-dom"
 import { useWikiPage, useWikiPages } from "../hooks/useWiki"
-import { Icon } from "@stellar/design-system"
 
 const WikiPage: React.FC = () => {
 	const { slug } = useParams<{ slug: string }>()
 	const { data: page, isLoading, error } = useWikiPage(slug)
 	const { data: allPages } = useWikiPages()
 
-	const otherPagesInCategory = allPages?.filter(p => p.category === page?.category && p.slug !== slug) ?? []
+	const otherPagesInCategory =
+		allPages?.filter((p) => p.category === page?.category && p.slug !== slug) ??
+		[]
 
 	if (isLoading) {
 		return (
@@ -30,8 +32,12 @@ const WikiPage: React.FC = () => {
 		return (
 			<div className="w-full max-w-6xl mx-auto px-6 py-24 text-center">
 				<h1 className="text-4xl font-black mb-4">Page not found</h1>
-				<p className="text-white/50 mb-8">The wiki page you are looking for doesn't exist or has been moved.</p>
-				<Link to="/wiki" className="text-brand-cyan hover:underline">Back to Wiki</Link>
+				<p className="text-white/50 mb-8">
+					The wiki page you are looking for doesn't exist or has been moved.
+				</p>
+				<Link to="/wiki" className="text-brand-cyan hover:underline">
+					Back to Wiki
+				</Link>
 			</div>
 		)
 	}
@@ -45,12 +51,19 @@ const WikiPage: React.FC = () => {
 			<div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
 				<main className="flex flex-col gap-8">
 					<nav className="flex items-center gap-2 text-sm text-white/40">
-						<Link to="/wiki" className="hover:text-brand-cyan transition-colors">Wiki</Link>
+						<Link
+							to="/wiki"
+							className="hover:text-brand-cyan transition-colors"
+						>
+							Wiki
+						</Link>
 						<Icon.ChevronRight size="xs" />
 						<span className="text-white/60">{page.category}</span>
 					</nav>
 
-					<h1 className="text-4xl sm:text-5xl font-black tracking-tight">{page.title}</h1>
+					<h1 className="text-4xl sm:text-5xl font-black tracking-tight">
+						{page.title}
+					</h1>
 
 					<article className="prose prose-invert prose-brand max-w-none glass-card p-8 md:p-12 rounded-[2.5rem] border border-white/10">
 						<ReactMarkdown>{page.content}</ReactMarkdown>
@@ -64,7 +77,7 @@ const WikiPage: React.FC = () => {
 						</h3>
 						<div className="flex flex-col gap-3">
 							{otherPagesInCategory.length > 0 ? (
-								otherPagesInCategory.map(p => (
+								otherPagesInCategory.map((p) => (
 									<Link
 										key={p.id}
 										to={`/wiki/${p.slug}`}
@@ -74,7 +87,9 @@ const WikiPage: React.FC = () => {
 									</Link>
 								))
 							) : (
-								<p className="text-xs text-white/30 italic">No other pages in this category.</p>
+								<p className="text-xs text-white/30 italic">
+									No other pages in this category.
+								</p>
 							)}
 						</div>
 					</div>
@@ -82,7 +97,8 @@ const WikiPage: React.FC = () => {
 					<div className="glass-card p-6 rounded-2xl border border-white/5 bg-brand-cyan/5">
 						<h3 className="text-sm font-black mb-2">Need more help?</h3>
 						<p className="text-xs text-white/50 mb-4">
-							Join our community Discord to chat with other scholars and developers.
+							Join our community Discord to chat with other scholars and
+							developers.
 						</p>
 						<a
 							href="https://discord.gg/stellar"

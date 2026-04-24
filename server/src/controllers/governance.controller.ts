@@ -65,14 +65,13 @@ function parseViewerAddress(value: unknown): string | null {
 
 function buildProposalSelect(viewerParamIndex?: number) {
 	const viewerVoteSelect = viewerParamIndex
-		? `,
-			(
-				SELECT v.support
-				FROM votes v
-				WHERE v.proposal_id = p.id AND v.voter_address = $${viewerParamIndex}
-				LIMIT 1
-			) AS user_vote_support`
+		? ", uv.support AS user_vote_support"
 		: ", NULL::boolean AS user_vote_support"
+	const viewerJoin = viewerParamIndex
+		? ` LEFT JOIN votes uv
+			ON uv.proposal_id = p.id
+			AND uv.voter_address = $${viewerParamIndex}`
+		: ""
 
 	return `SELECT
 			p.id,
@@ -85,7 +84,7 @@ function buildProposalSelect(viewerParamIndex?: number) {
 			p.status,
 			p.deadline,
 			p.created_at${viewerVoteSelect}
-		FROM proposals p`
+		FROM proposals p${viewerJoin}`
 }
 
 export async function getGovernanceProposals(
@@ -288,10 +287,10 @@ export async function createGovernanceProposal(
 		}
 
 		// 1. Call the on-chain contract first
-		const contractResult = await stellarContractService.submitScholarshipProposal(
-			params,
-			{ requestId: req.requestId },
-		)
+		const contractResult =
+			await stellarContractService.submitScholarshipProposal(params, {
+				requestId: req.requestId,
+			})
 
 		// 2. Only write to DB if contract call succeeded
 		const dbResult = await pool.query(
@@ -407,11 +406,14 @@ export async function castVote(req: Request, res: Response): Promise<void> {
 		}
 
 		// 5. Call the on-chain vote contract
-		const contractResult = await stellarContractService.castVote({
-			voter: voter_address,
-			proposalId: proposal_id,
-			support,
-		}, { requestId: req.requestId })
+		const contractResult = await stellarContractService.castVote(
+			{
+				voter: voter_address,
+				proposalId: proposal_id,
+				support,
+			},
+			{ requestId: req.requestId },
+		)
 
 		// 6. Write to DB after successful contract call
 		const votingPower = balanceBigInt

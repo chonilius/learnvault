@@ -64,7 +64,11 @@ export const WalletButton = () => {
 					<div className="px-6 py-4 bg-white/5 border-y border-white/5">
 						<p className="text-sm text-white/50">
 							Need help with your wallet? Check out our{" "}
-							<Link to="/wiki/stellar-basics" onClick={() => setShowDisconnectModal(false)} className="text-brand-cyan hover:underline">
+							<Link
+								to="/wiki/stellar-basics"
+								onClick={() => setShowDisconnectModal(false)}
+								className="text-brand-cyan hover:underline"
+							>
 								Stellar Basics guide
 							</Link>
 							.

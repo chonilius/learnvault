@@ -120,7 +120,9 @@ async function readJson<T>(response: Response): Promise<T> {
 	return data
 }
 
-export async function fetchProposals(address?: string): Promise<ProposalListResponse> {
+export async function fetchProposals(
+	address?: string,
+): Promise<ProposalListResponse> {
 	const url = new URL(`${API_BASE}/api/proposals`)
 	if (address) {
 		url.searchParams.set("viewer_address", address)

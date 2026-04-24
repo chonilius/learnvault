@@ -46,7 +46,7 @@ export function setupConsoleRequestTracing(): void {
 			}
 
 			original(tag, ...args)
-		}) as typeof console[typeof method]
+		}) as (typeof console)[typeof method]
 	}
 
 	consolePatched = true

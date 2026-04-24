@@ -5,13 +5,16 @@ import { NavLink } from "react-router-dom"
 import { fetchCourses } from "../hooks/useCourses"
 import { fetchLeaderboard } from "../hooks/useLeaderboard"
 import { fetchProposals } from "../hooks/useProposals"
-import { fetchTreasuryActivity, fetchTreasuryStats } from "../hooks/useTreasury"
+import {
+	fetchTreasuryActivityPage,
+	fetchTreasuryStats,
+} from "../hooks/useTreasury"
 import { useWallet } from "../hooks/useWallet"
 import { fetchHistory } from "../pages/History"
+import GlobalSearch from "./GlobalSearch"
 import { ReputationBadge } from "./ReputationBadge"
 import { ThemeToggle } from "./ThemeToggle"
 import { WalletButton } from "./WalletButton"
-import GlobalSearch from "./GlobalSearch"
 
 export default function NavBar() {
 	const [menuOpen, setMenuOpen] = useState(false)
@@ -30,6 +33,7 @@ export default function NavBar() {
 	const navLinks = [
 		{ to: "/courses", label: t("nav.learn") },
 		{ to: "/dao", label: t("nav.dao") },
+		{ to: "/community", label: "Community" },
 		{ to: "/leaderboard", label: t("nav.leaderboard") },
 		{ to: "/history", label: "Activity" },
 		{ to: "/wiki", label: t("nav.docs") },
@@ -76,7 +80,7 @@ export default function NavBar() {
 				})
 				void queryClient.prefetchQuery({
 					queryKey: ["treasury", "activity"],
-					queryFn: fetchTreasuryActivity,
+					queryFn: () => fetchTreasuryActivityPage(10, 0),
 					staleTime: 60 * 1000,
 				})
 			}

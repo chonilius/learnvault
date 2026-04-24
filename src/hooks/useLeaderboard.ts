@@ -13,7 +13,9 @@ export interface LeaderboardData {
 	your_rank?: number | null
 }
 
-export async function fetchLeaderboard(address?: string): Promise<LeaderboardData> {
+export async function fetchLeaderboard(
+	address?: string,
+): Promise<LeaderboardData> {
 	const response = await fetch(
 		`${API_URL}/api/scholars/leaderboard${address ? `?viewer_address=${address}` : ""}`,
 	)

@@ -132,8 +132,8 @@ const MilestoneSubmitPanel: React.FC<MilestoneSubmitPanelProps> = ({
 								: "border-brand-cyan/30 bg-brand-cyan/10 text-brand-cyan"
 						}`}
 					>
-						Escrow timeout window: <strong>{daysRemaining}</strong>{" "}
-						day{daysRemaining === 1 ? "" : "s"} remaining
+						Escrow timeout window: <strong>{daysRemaining}</strong> day
+						{daysRemaining === 1 ? "" : "s"} remaining
 					</div>
 				)}
 

@@ -1,10 +1,10 @@
-import { useLeaderboard } from "../hooks/useLeaderboard"
 import { Trophy } from "lucide-react"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import AddressDisplay from "../components/AddressDisplay"
 import { EmptyState } from "../components/states/emptyState"
 import { ErrorState } from "../components/states/errorState"
+import { useLeaderboard } from "../hooks/useLeaderboard"
 import { useWallet } from "../hooks/useWallet"
 import { type LeaderboardEntry } from "../util/mockLeaderboardData"
 
