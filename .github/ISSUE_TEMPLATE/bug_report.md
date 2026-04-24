@@ -1,42 +1,34 @@
 ---
-name: "Bug Report"
-about: "Report a bug to help us improve LearnVault."
-title: "[Bug] <describe the bug>"
-labels: ["bug", "help wanted"]
-assignees: ""
+name: Bug Report
+about: Create a report to help us improve
+title: '[BUG] '
+labels: bug
+assignees: ''
 ---
 
-## Describe the bug
+## Description
+<!-- A clear and concise description of the bug -->
 
-A clear and concise description of what the bug is.
-
-## To Reproduce
-
-Steps to reproduce the behavior:
-
+## Steps to Reproduce
 1. Go to '...'
 2. Click on '...'
 3. Scroll down to '...'
 4. See error
 
-## Expected behavior
+## Expected Behavior
+<!-- What you expected to happen -->
 
-A clear and concise description of what you expected to happen.
+## Actual Behavior
+<!-- What actually happened -->
+
+## Environment
+- **Network:** (e.g., testnet, mainnet, local)
+- **Browser:** (e.g., Chrome, Firefox, Safari)
+- **Wallet:** (e.g., Freighter, Albedo, LOBSTR)
+- **OS:** (e.g., Windows, macOS, Linux)
 
 ## Screenshots
+<!-- If applicable, add screenshots to help explain your problem -->
 
-If applicable, add screenshots to help explain your problem.
-
-## Environment (please complete the following information):
-
-- OS: [e.g. macOS, Windows, Linux]
-- Browser [e.g. Chrome, Safari]
-- Wallet [e.g. MetaMask, Freighter]
-
-## Additional context
-
-Add any other context about the problem here.
-
----
-
-_Thank you for helping us improve LearnVault!_
+## Additional Context
+<!-- Add any other context about the problem here -->
