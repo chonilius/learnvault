@@ -2,6 +2,7 @@ import { type Request, type Response } from "express"
 import { z } from "zod"
 
 import { pool } from "../db/index"
+import { trackEscrowTimeout } from "../services/escrow-timeout.service"
 import { stellarContractService } from "../services/stellar-contract.service"
 
 type ProposalStatus = "pending" | "approved" | "rejected"
@@ -287,8 +288,10 @@ export async function createGovernanceProposal(
 		}
 
 		// 1. Call the on-chain contract first
-		const contractResult =
-			await stellarContractService.submitScholarshipProposal(params)
+		const contractResult = await stellarContractService.submitScholarshipProposal(
+			params,
+			{ requestId: req.requestId },
+		)
 
 		// 2. Only write to DB if contract call succeeded
 		const dbResult = await pool.query(
@@ -306,6 +309,16 @@ export async function createGovernanceProposal(
 		)
 
 		const proposal_id = dbResult.rows[0]?.id
+		if (proposal_id) {
+			try {
+				await trackEscrowTimeout({
+					proposalId: proposal_id,
+					scholarAddress: author_address,
+				})
+			} catch (trackingErr) {
+				console.error("[governance] escrow tracking failed:", trackingErr)
+			}
+		}
 
 		res.status(201).json({
 			proposal_id,
@@ -398,7 +411,7 @@ export async function castVote(req: Request, res: Response): Promise<void> {
 			voter: voter_address,
 			proposalId: proposal_id,
 			support,
-		})
+		}, { requestId: req.requestId })
 
 		// 6. Write to DB after successful contract call
 		const votingPower = balanceBigInt
@@ -510,7 +523,10 @@ export async function cancelProposal(
 			return
 		}
 
-		await stellarContractService.cancelProposal({ proposalId })
+		await stellarContractService.cancelProposal(
+			{ proposalId },
+			{ requestId: req.requestId },
+		)
 		await pool.query("UPDATE proposals SET cancelled = TRUE WHERE id = $1", [
 			proposalId,
 		])
